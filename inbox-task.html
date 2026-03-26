@@ -6,37 +6,102 @@
     <title>Premium Tasks - Inbox Dollar</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; --card: rgba(255,255,255,0.05); }
-        body { font-family: 'Poppins', sans-serif; background: var(--dark-bg); color: white; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        #taskContainer { min-height: 200px; }
-        .task-box { 
-            background: var(--card); border-radius: 20px; padding: 18px; 
-            border: 1px solid rgba(255,255,255,0.1); display: flex; 
-            justify-content: space-between; align-items: center; margin-bottom: 12px;
+        :root { 
+            --primary: #FF7B00; 
+            --dark-bg: #0A0A0A; 
+            --card: rgba(255,255,255,0.05); 
+            --card-border: rgba(255,255,255,0.1);
         }
-        .task-info { display: flex; align-items: center; gap: 12px; }
-        .task-icon { font-size: 22px; background: rgba(255,123,0,0.1); padding: 8px; border-radius: 10px; }
-        .task-title { font-weight: 600; font-size: 14px; margin: 0; }
-        .task-reward { color: var(--primary); font-size: 12px; font-weight: 700; }
-        .btn { background: var(--primary); border: none; padding: 10px 18px; border-radius: 10px; color: #000; font-weight: 700; cursor: pointer; }
-        .loading { text-align: center; color: #888; margin-top: 50px; }
-        /* ব্যাক বাটন স্টাইল */
-        .back-btn { text-align: center; display: block; margin-top: 30px; color: #888; text-decoration: none; font-size: 14px; cursor: pointer; }
+        
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: var(--dark-bg); 
+            color: white; 
+            padding: 20px; 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container { width: 100%; max-width: 420px; }
+
+        .header { text-align: center; margin-bottom: 30px; margin-top: 20px; }
+        .header h3 { color: var(--primary); margin: 0; font-size: 22px; }
+        
+        #taskContainer { min-height: 200px; width: 100%; }
+
+        .task-box { 
+            background: var(--card); 
+            border-radius: 20px; 
+            padding: 18px; 
+            border: 1px solid var(--card-border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        
+        .task-box:active { transform: scale(0.98); }
+
+        .task-info { display: flex; align-items: center; gap: 15px; }
+        .task-icon { 
+            font-size: 24px; 
+            background: rgba(255,123,0,0.1); 
+            width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 12px; 
+            border: 1px solid rgba(255,123,0,0.2);
+        }
+
+        .task-details { display: flex; flex-direction: column; }
+        .task-title { font-weight: 600; font-size: 14px; margin: 0; color: #fff; }
+        .task-reward { color: var(--primary); font-size: 12px; font-weight: 700; margin-top: 2px; }
+
+        .btn { 
+            background: linear-gradient(45deg, var(--primary), #FFB800); 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 12px; 
+            color: #000; 
+            font-weight: 700; 
+            cursor: pointer; 
+            font-size: 12px;
+            box-shadow: 0 4px 15px rgba(255,123,0,0.2);
+        }
+
+        .loading { text-align: center; color: #888; margin-top: 50px; font-size: 14px; }
+        .back-btn { 
+            text-align: center; 
+            display: inline-block; 
+            margin-top: 30px; 
+            color: #888; 
+            text-decoration: none; 
+            font-size: 13px; 
+            padding: 10px 20px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.03);
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h3>Premium Offers</h3>
-        <p style="font-size: 12px; color: #888;">নতুন সব অফার এখান থেকে পূরণ করুন</p>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h3>Premium Offers</h3>
+            <p style="font-size: 12px; color: #888;">Complete tasks to earn coins instantly</p>
+        </div>
 
-    <div id="taskContainer">
-        <div class="loading">অফার লোড হচ্ছে...</div>
-    </div>
+        <div id="taskContainer">
+            <div class="loading">Loading offers... ⏳</div>
+        </div>
 
-    <a href="dashboard.html" class="back-btn">← Back to Home</a>
+        <div style="text-align: center;">
+            <a href="dashboard.html" class="back-btn">← Back to Home</a>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -56,14 +121,14 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // পরিবর্তন ২: লগইন চেক (ইউজার না থাকলে index.html এ যাবে)
+        // ইউজার লগইন চেক
         auth.onAuthStateChanged((user) => {
             if (!user) {
-                window.location.href = "index.html";
+                window.location.href = "login.html"; // লগইন পেজ অনুযায়ী নাম ঠিক করবেন
             }
         });
 
-        // অ্যাডমিন প্যানেল থেকে অফারগুলো নিয়ে আসা
+        // অ্যাডমিন প্যানেল থেকে অফার রিয়েল-টাইমে লোড করা
         db.ref('cpaOffers').on('value', (snapshot) => {
             const container = document.getElementById('taskContainer');
             container.innerHTML = ""; 
@@ -71,36 +136,42 @@
             if (snapshot.exists()) {
                 snapshot.forEach((child) => {
                     const data = child.val();
+                    const offerId = child.key;
                     container.innerHTML += `
                         <div class="task-box">
                             <div class="task-info">
                                 <div class="task-icon">${data.icon || '🎁'}</div>
-                                <div>
+                                <div class="task-details">
                                     <p class="task-title">${data.title}</p>
                                     <span class="task-reward">+${data.reward} Coins</span>
                                 </div>
                             </div>
-                            <button class="btn" onclick="openOffer('${data.link}', ${data.reward})">CLAIM</button>
+                            <button class="btn" onclick="claimOffer('${offerId}', '${data.link}', ${data.reward})">CLAIM</button>
                         </div>
                     `;
                 });
             } else {
-                container.innerHTML = "<p style='text-align:center; color:#666;'>এখনো কোনো অফার নেই।</p>";
+                container.innerHTML = "<p style='text-align:center; color:#666; margin-top:50px;'>No offers available right now. Check back later!</p>";
             }
         });
 
-        function openOffer(link, reward) {
+        // অফার ক্লেইম করার ফাংশন
+        function claimOffer(id, link, reward) {
             const user = auth.currentUser;
-            if(!user) {
-                window.location.href = "index.html";
-                return;
-            }
+            if(!user) return;
 
+            // অফার লিঙ্কে পাঠানো
             window.open(link, '_blank');
 
-            // পরিবর্তন ৩: ইউজার অবজেক্টের পাথ ঠিক করা হলো (user.uid)
-            db.ref('users/' + user.uid + '/balance').transaction(c => (c || 0) + parseInt(reward))
-            .then(() => alert("অফারটি ওপেন হয়েছে! রিওয়ার্ড যোগ করা হয়েছে।"));
+            // ব্যালেন্স আপডেট (Transaction ব্যবহার করা হয়েছে যাতে ডাটা মিস না হয়)
+            db.ref('users/' + user.uid + '/balance').transaction((currentBalance) => {
+                return (currentBalance || 0) + parseInt(reward);
+            }).then(() => {
+                // ইউজারকে একটি কনফার্মেশন মেসেজ দেখানো
+                alert("Task Started! " + reward + " Coins will be added to your balance.");
+            }).catch((err) => {
+                console.error("Reward addition failed:", err);
+            });
         }
     </script>
 </body>

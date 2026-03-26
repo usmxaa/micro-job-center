@@ -78,7 +78,6 @@
             color: #000; font-weight: 700; cursor: pointer; margin-top: 10px;
         }
 
-        /* Bottom Nav - Fix Layout */
         .bottom-nav {
             position: fixed; 
             bottom: 20px; 
@@ -222,7 +221,8 @@
 
           syncWithAdmin();
       } else {
-          window.location.href = "login.html";
+          // *** আপডেট: login.html বদলে index.html করা হয়েছে ***
+          window.location.href = "index.html";
       }
   });
 
@@ -245,19 +245,16 @@
       document.getElementById('noticeModal').style.display = 'none';
   }
 
-    function logout() {
+  function logout() {
     if(confirm("লগ আউট করতে চান?")) {
         auth.signOut().then(() => {
-            // যেহেতু আপনার মেইন পেজ index.html, তাই এটি ব্যবহার করুন
+            // *** আপডেট: login.html বদলে index.html করা হয়েছে ***
             window.location.href = "index.html"; 
         }).catch((error) => {
             console.error("Logout Error:", error);
         });
     }
 }
-
-
-
 </script>
 
 </body>

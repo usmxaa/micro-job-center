@@ -40,19 +40,20 @@
         .withdraw-btn:active { transform: scale(0.95); }
         .back-btn { text-align: center; display: block; margin-top: 20px; color: #888; text-decoration: none; font-size: 14px; cursor: pointer; }
 
-        /* হিস্ট্রি সেকশনের স্টাইল (নতুন যোগ করা হয়েছে, ডিজাইন নষ্ট করবে না) */
+        /* হিস্ট্রি সেকশন */
         .history-section { margin-top: 40px; padding-bottom: 20px; }
         .history-item { 
             background: var(--card); padding: 15px; border-radius: 15px; 
             margin-bottom: 10px; border-left: 4px solid #444; 
         }
+        .status-tag { font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
     <div class="balance-card">
         <h2>Available Balance</h2>
-        <p id="userBalance">Loading... 🟡</p>
+        <p id="userBalance">0 🟡</p>
     </div>
 
     <h3 style="font-size: 16px; margin-left: 5px;">Select Method</h3>
@@ -81,10 +82,10 @@
         <button class="withdraw-btn" onclick="submitWithdraw()">WITHDRAW NOW</button>
     </div>
 
-    <div class="history-section" id="historySection">
+    <div class="history-section">
         <h3 style="font-size: 16px; margin-left: 5px; margin-bottom: 15px;">Withdraw History</h3>
         <div id="historyList">
-            <p style="font-size: 12px; color: #666; text-align: center;">Loading history...</p>
+            <p style="font-size: 12px; color: #666; text-align: center;">No history available.</p>
         </div>
     </div>
 
@@ -112,23 +113,18 @@
         let currentBalance = 0;
         let userName = "";
 
+        // ইউজার ডাটা এবং ব্যালেন্স ট্র্যাকিং
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref('users/' + user.uid).on('value', (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
-                        // অ্যাডমিন ব্লক চেক
-                        if (data.isBlocked === true) {
-                            alert("Your account is blocked!");
-                            auth.signOut().then(() => window.location.href = "index.html");
-                            return;
-                        }
                         currentBalance = data.balance || 0;
-                        userName = data.username || "User";
+                        userName = data.username || user.displayName || "User";
                         document.getElementById('userBalance').innerText = currentBalance + " 🟡";
                         
-                        // হিস্ট্রি লোড করা
-                        loadWithdrawHistory(user.uid);
+                        // পেমেন্ট হিস্ট্রি লোড
+                        loadHistory(user.uid);
                     }
                 });
             } else {
@@ -143,41 +139,41 @@
             element.classList.add('active');
         }
 
-        function loadWithdrawHistory(uid) {
+        // হিস্ট্রি লোড করার ফাংশন
+        function loadHistory(uid) {
             db.ref('withdrawRequests').orderByChild('uid').equalTo(uid).on('value', (snapshot) => {
+                const historyList = document.getElementById('historyList');
                 let html = "";
-                if (!snapshot.exists()) {
-                    html = "<p style='font-size:12px; color:#666; text-align:center;'>No history found.</p>";
-                } else {
+                if (snapshot.exists()) {
                     snapshot.forEach(child => {
-                        const data = child.val();
-                        let statusColor = data.status === "Pending" ? "#FF7B00" : (data.status === "Approved" ? "#00FF00" : "#FF0000");
+                        const r = child.val();
+                        let color = r.status === "Pending" ? "#FF7B00" : (r.status === "Paid" ? "#00E676" : "#FF5252");
                         html += `
-                            <div class="history-item" style="border-left-color: ${statusColor}">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="font-size:14px; font-weight:600;">${data.method}</span>
-                                    <span style="font-size:12px; font-weight:700; color:${statusColor}">${data.status.toUpperCase()}</span>
-                                </div>
-                                <div style="font-size:11px; color:#888; margin-top:5px;">
-                                    Amount: ${data.amount} 🟡 | Wallet: ${data.account}
-                                </div>
-                            </div>`;
+                        <div class="history-item" style="border-left-color: ${color}">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:14px; font-weight:600;">${r.method}</span>
+                                <span class="status-tag" style="background: ${color}22; color: ${color}">${r.status}</span>
+                            </div>
+                            <div style="font-size:11px; color:#888; margin-top:5px;">
+                                Amount: ${r.amount} 🟡 | A/C: ${r.account}
+                            </div>
+                        </div>`;
                     });
+                    historyList.innerHTML = html;
                 }
-                document.getElementById('historyList').innerHTML = html;
             });
         }
 
+        // উইথড্র সাবমিট করা
         function submitWithdraw() {
             const account = document.getElementById('accountNo').value.trim();
             const amount = parseInt(document.getElementById('amount').value);
             const user = auth.currentUser;
 
-            if (!user) return;
-            if (!selectedMethodName) return alert("Please select a method!");
-            if (!account || !amount) return alert("Please fill all details!");
-            if (amount < 1000) return alert("Minimum withdrawal is 1000 coins!");
-            if (amount > currentBalance) return alert("Insufficient balance!");
+            if (!selectedMethodName) return alert("পেমেন্ট মেথড সিলেক্ট করুন!");
+            if (!account || !amount) return alert("সবগুলো ঘর পূরণ করুন!");
+            if (amount < 1000) return alert("মিনিমাম ১০০০ কয়েন লাগবে!");
+            if (amount > currentBalance) return alert("আপনার ব্যালেন্স যথেষ্ট নয়!");
 
             const requestData = {
                 uid: user.uid,
@@ -186,14 +182,16 @@
                 account: account,
                 amount: amount,
                 status: "Pending",
-                timestamp: Date.now()
+                date: new Date().toLocaleString()
             };
 
+            // অ্যাডমিন প্যানেলে ডাটা পাঠানো
             db.ref('withdrawRequests').push(requestData).then(() => {
+                // ব্যালেন্স আপডেট করা
                 db.ref('users/' + user.uid).update({
                     balance: currentBalance - amount
                 }).then(() => {
-                    alert("Withdrawal Request Sent! ✅");
+                    alert("রিকোয়েস্ট পাঠানো হয়েছে! অ্যাডমিন চেক করে পেমেন্ট করবে। ✅");
                     document.getElementById('accountNo').value = "";
                     document.getElementById('amount').value = "";
                 });

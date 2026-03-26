@@ -246,12 +246,16 @@
   }
 
   function logout() {
-      if(confirm("লগ আউট করতে চান?")) {
-          auth.signOut().then(() => {
-              window.location.href = "login.html";
-          });
-      }
-  }
+    if(confirm("লগ আউট করতে চান?")) {
+        auth.signOut().then(() => {
+            // যদি আপনার লগইন পেজের নাম index.html হয় (যা GitHub-এর জন্য স্ট্যান্ডার্ড)
+            window.location.href = "index.html"; 
+        }).catch((error) => {
+            console.error("Logout Error:", error);
+        });
+    }
+}
+
 </script>
 
 </body>

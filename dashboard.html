@@ -245,17 +245,17 @@
       document.getElementById('noticeModal').style.display = 'none';
   }
 
-  function logout() {
+    function logout() {
     if(confirm("লগ আউট করতে চান?")) {
         auth.signOut().then(() => {
-            // আপনার মেইন পেজের নাম index.html, তাই এটি ব্যবহার করুন
-            window.location.href = "index.html";
+            // যেহেতু আপনার মেইন পেজ index.html, তাই এটি ব্যবহার করুন
+            window.location.href = "index.html"; 
         }).catch((error) => {
             console.error("Logout Error:", error);
-            alert("লগআউট করতে সমস্যা হচ্ছে। আবার চেষ্টা করুন।");
         });
     }
 }
+
 
 
 </script>

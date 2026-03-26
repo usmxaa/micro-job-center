@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captcha Task - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; --card-bg: rgba(255, 255, 255, 0.05); }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--dark-bg); color: white; margin: 0; padding: 20px; text-align: center; }
+        .app-shell { max-width: 420px; margin: auto; }
+        .captcha-box { background: var(--card-bg); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.1); margin-top: 50px; }
+        .captcha-code { font-size: 32px; font-weight: 800; letter-spacing: 8px; color: var(--primary); background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 20px; }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #333; background: #111; color: white; text-align: center; font-size: 18px; margin-bottom: 20px; outline: none; }
+        input:focus { border-color: var(--primary); }
+        .btn { background: var(--primary); border: none; padding: 15px; width: 100%; border-radius: 15px; color: #000; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <h3>Solve Captcha</h3>
+        <div class="captcha-box">
+            <div class="captcha-code" id="mainCaptcha">A7B9R</div>
+            <input type="text" id="userInput" placeholder="Type the code above">
+            <button class="btn" onclick="validateCaptcha()">SUBMIT & EARN</button>
+        </div>
+        <p style="margin-top: 20px; color: #888;" onclick="location.href='index.html'">← Back to Home</p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg", authDomain: "micro-job-center.firebaseapp.com", databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com", projectId: "micro-job-center", storageBucket: "micro-job-center.firebasestorage.app", messagingSenderId: "146985711984", appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        function validateCaptcha() {
+            const user = auth.currentUser;
+            const code = document.getElementById('mainCaptcha').innerText;
+            const input = document.getElementById('userInput').value;
+
+            if (!user) return alert("Please login first!");
+            if (input.toUpperCase() === code) {
+                // Firebase-এ কয়েন যোগ করা
+                db.ref('users/' + user.uid + '/balance').transaction((current) => {
+                    return (current || 0) + 5;
+                }).then(() => {
+                    alert("Success! 5 Coins Added.");
+                    location.reload(); // নতুন ক্যাপচা আসবে
+                });
+            } else {
+                alert("Wrong Captcha! Try again.");
+            }
+        }
+    </script>
+</body>
+</html>

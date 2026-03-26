@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inbox Dollar - Authentication</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-orange: #FF7300; 
+            --bg-light: #F4F4F4;
+            --text-dark: #333333;
+            --white: #FFFFFF;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background-color: var(--primary-orange);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            background: var(--primary-orange);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .hero-section {
+            flex: 0.35;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .hero-img {
+            width: 60%;
+            max-width: 180px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .form-section {
+            flex: 0.65;
+            background: var(--white);
+            border-radius: 40px 40px 0 0;
+            padding: 30px 25px;
+            text-align: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .welcome-text h2 { color: var(--primary-orange); margin: 0; font-size: 24px; font-weight: 700; }
+        .welcome-text p { color: #777; font-size: 12px; margin: 5px 0 20px; }
+
+        .input-group { margin-bottom: 12px; text-align: left; }
+        .input-group input {
+            width: 100%; padding: 12px 18px; border-radius: 12px; border: 1px solid #eee;
+            background: #f9f9f9; outline: none; transition: 0.3s;
+        }
+        .input-group input:focus { border-color: var(--primary-orange); background: #fff; }
+
+        .main-btn {
+            width: 100%; padding: 14px; border-radius: 50px; border: none;
+            background: var(--primary-orange); color: white; font-size: 15px; font-weight: 700;
+            cursor: pointer; margin-top: 5px;
+        }
+
+        .google-btn {
+            width: 100%; padding: 10px; border-radius: 50px; border: 1px solid #ddd;
+            background: white; display: flex; align-items: center; justify-content: center;
+            gap: 10px; font-weight: 600; font-size: 13px; margin: 15px 0; cursor: pointer;
+        }
+
+        .toggle-text { font-size: 12px; color: #666; margin-top: 15px; }
+        .toggle-text span { color: var(--primary-orange); font-weight: 700; cursor: pointer; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="hero-section">
+        <img src="https://cdni.iconscout.com/illustration/premium/thumb/user-login-4268415-3551762.png" class="hero-img">
+    </div>
+
+    <div class="form-section">
+        <div id="login-form">
+            <div class="welcome-text">
+                <h2>Welcome Back</h2>
+                <p>Login to continue your journey!</p>
+            </div>
+            <div class="input-group"><input type="email" id="loginEmail" placeholder="Email Address"></div>
+            <div class="input-group"><input type="password" id="loginPass" placeholder="Password"></div>
+            <button class="main-btn" onclick="loginUser()">LOGIN</button>
+            <button class="google-btn" onclick="googleLogin()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="18">
+                Continue with Google
+            </button>
+            <div class="toggle-text">Don't have an account? <span onclick="toggleAuth()">Sign Up</span></div>
+        </div>
+
+        <div id="signup-form" class="hidden">
+            <div class="welcome-text">
+                <h2>Create Account</h2>
+                <p>Join us and start earning!</p>
+            </div>
+            <div class="input-group"><input type="text" id="newName" placeholder="Full Name"></div>
+            <div class="input-group"><input type="email" id="newEmail" placeholder="Email Address"></div>
+            <div class="input-group"><input type="password" id="newPass" placeholder="Password"></div>
+            <div class="input-group"><input type="text" id="referCodeInput" placeholder="Refer Code (Optional)"></div>
+            
+            <button class="main-btn" onclick="signUpUser()">SIGN UP</button>
+            <div class="toggle-text">Already have an account? <span onclick="toggleAuth()">Login</span></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg",
+        authDomain: "micro-job-center.firebaseapp.com",
+        databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com",
+        projectId: "micro-job-center",
+        storageBucket: "micro-job-center.firebasestorage.app",
+        messagingSenderId: "146985711984",
+        appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    function toggleAuth() {
+        document.getElementById('login-form').classList.toggle('hidden');
+        document.getElementById('signup-form').classList.toggle('hidden');
+    }
+
+    // --- রেফারেল বোনাস প্রসেস করার ফাংশন ---
+    function processReferral(newUserUid, typedCode) {
+        if (!typedCode) return;
+
+        // সব ইউজারদের মধ্যে এই কোডটি কার সেটা খোঁজা হচ্ছে
+        db.ref('users').once('value', (snapshot) => {
+            snapshot.forEach((childSnapshot) => {
+                const userId = childSnapshot.key;
+                const userData = childSnapshot.val();
+                const actualReferCode = userId.substring(0, 6).toUpperCase();
+
+                if (typedCode.toUpperCase() === actualReferCode) {
+                    // ১. যে রেফার করেছে তাকে ১০০ কয়েন দেওয়া
+                    const oldBalance = userData.balance || 0;
+                    const oldRefers = userData.totalRefers || 0;
+                    db.ref('users/' + userId).update({
+                        balance: oldBalance + 100,
+                        totalRefers: oldRefers + 1)
+                    });
+
+                    // ২. নতুন ইউজারকে ৫০ কয়েন ওয়েলকাম বোনাস দেওয়া
+                    db.ref('users/' + newUserUid).update({
+                        balance: 50
+                    });
+                }
+            });
+        });
+    }
+
+    // --- সাইন আপ ফাংশন ---
+    function signUpUser() {
+        const name = document.getElementById('newName').value;
+        const email = document.getElementById('newEmail').value;
+        const pass = document.getElementById('newPass').value;
+        const referCode = document.getElementById('referCodeInput').value;
+
+        if(!name || !email || !pass) return alert("সব তথ্য দিন!");
+
+        auth.createUserWithEmailAndPassword(email, pass).then((res) => {
+            const uid = res.user.uid;
+            db.ref('users/' + uid).set({
+                username: name,
+                email: email,
+                balance: 0,
+                totalRefers: 0,
+                userId: uid
+            }).then(() => {
+                // রেফারাল বোনাস চেক
+                if(referCode) processReferral(uid, referCode);
+                window.location.href = "index.html";
+            });
+        }).catch(err => alert(err.message));
+    }
+
+    // --- লগইন এবং গুগল লগইন আগের মতোই থাকবে ---
+    function loginUser() {
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPass').value;
+        auth.signInWithEmailAndPassword(email, pass)
+            .then(() => window.location.href = "index.html")
+            .catch(err => alert(err.message));
+    }
+
+    function googleLogin() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).then((result) => {
+            const user = result.user;
+            db.ref('users/' + user.uid).once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    db.ref('users/' + user.uid).set({
+                        username: user.displayName,
+                        email: user.email,
+                        balance: 0,
+                        totalRefers: 0,
+                        userId: user.uid
+                    });
+                }
+                window.location.href = "index.html";
+            });
+        }).catch(err => alert(err.message));
+    }
+</script>
+</body>
+</html>

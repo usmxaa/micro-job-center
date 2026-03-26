@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>Offerwall - Inbox Dollar</title>
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; }
+        body { font-family: 'Poppins', sans-serif; background: var(--dark-bg); color: white; padding: 20px; text-align: center; }
+        .offer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
+        .offer-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; }
+        .offer-card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .offer-icon { font-size: 30px; margin-bottom: 10px; }
+        .offer-val { font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <h3>Offerwall</h3>
+    <div class="offer-grid">
+        <div class="offer-card" onclick="location.href='video-ad.html'">
+            <div class="offer-icon">🎬</div>
+            <div>Watch Ad</div>
+            <div class="offer-val">50 Coins</div>
+        </div>
+        <div class="offer-card" onclick="location.href='math-quiz.html'">
+            <div class="offer-icon">🧮</div>
+            <div>Math Quiz</div>
+            <div class="offer-val">30 Coins</div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch & Win</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; --card-bg: rgba(255, 255, 255, 0.05); }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--dark-bg); color: white; margin: 0; padding: 20px; text-align: center; }
+        .scratch-card { width: 300px; height: 150px; background: #333; margin: 50px auto; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 2px dashed var(--primary); cursor: pointer; }
+        .reward-msg { color: var(--primary); margin-top: 20px; display: none; }
+        .btn { background: var(--primary); border: none; padding: 12px 30px; border-radius: 10px; color: #000; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h3>Scratch and Win</h3>
+    <div class="scratch-card" id="card" onclick="startScratch()">SCRATCH HERE</div>
+    <div id="rewardMsg" class="reward-msg">You won 10 Coins!</div>
+    <button class="btn" onclick="location.href='index.html'">Back to Home</button>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg", authDomain: "micro-job-center.firebaseapp.com", databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com", projectId: "micro-job-center", storageBucket: "micro-job-center.firebasestorage.app", messagingSenderId: "146985711984", appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        function startScratch() {
+            const user = auth.currentUser;
+            if (!user) return alert("Login first!");
+
+            const card = document.getElementById('card');
+            card.style.background = "var(--card-bg)";
+            card.innerText = "💰 10";
+            document.getElementById('rewardMsg').style.display = "block";
+            card.onclick = null; // একবারে একটার বেশি নয়
+
+            // Firebase ব্যালেন্স আপডেট
+            db.ref('users/' + user.uid + '/balance').transaction((current) => {
+                return (current || 0) + 10;
+            });
+        }
+    </script>
+</body>
+</html>

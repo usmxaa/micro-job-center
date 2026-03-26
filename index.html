@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inbox Dollar - Premium Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF7B00; 
+            --secondary: #FFB800;
+            --dark-bg: #0A0A0A;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #FFFFFF;
+            --text-dim: #A0A0A0;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            margin: 0; display: flex; justify-content: center;
+        }
+
+        .app-shell {
+            width: 100%; max-width: 420px; min-height: 100vh;
+            background: radial-gradient(circle at top right, rgba(255,123,0,0.15), #000);
+            padding-bottom: 110px; position: relative;
+        }
+
+        .notice-bar {
+            background: rgba(255, 123, 0, 0.1);
+            border-bottom: 1px solid var(--card-border);
+            padding: 8px 0; overflow: hidden;
+        }
+        marquee { color: var(--secondary); font-size: 11px; font-weight: 500; }
+
+        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .user-info h2 { margin: 0; font-size: 18px; font-weight: 600; }
+        .user-info p { margin: 0; font-size: 12px; color: var(--text-dim); }
+        
+        /* প্রোফাইল আইকন আপডেট: এখন ছবি দেখাবে */
+        .profile-icon-wrap {
+            width: 50px; height: 50px; 
+            border-radius: 15px; overflow: hidden;
+            border: 2px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(255, 123, 0, 0.3);
+        }
+        .profile-icon-wrap img { width: 100%; height: 100%; object-fit: cover; }
+
+        .balance-card {
+            margin: 0 20px 25px; padding: 25px; background: var(--card-bg);
+            border-radius: 24px; border: 1px solid var(--card-border);
+            backdrop-filter: blur(15px); text-align: center;
+        }
+        .balance-amount { font-size: 36px; font-weight: 800; margin: 10px 0; color: #fff; }
+        .coin-tag {
+            display: inline-flex; align-items: center; background: rgba(255, 123, 0, 0.1);
+            padding: 5px 15px; border-radius: 12px; color: var(--secondary); font-weight: 600;
+        }
+
+        .content-area { padding: 0 20px; }
+        .section-label { font-size: 12px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 15px; display: block; letter-spacing: 2px; }
+        .task-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 30px; }
+        .task-box {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            padding: 15px 10px; border-radius: 18px; text-align: center; font-size: 11px;
+            transition: 0.3s; cursor: pointer; text-decoration: none; color: inherit;
+        }
+        .icon-wrap { font-size: 24px; margin-bottom: 8px; display: block; }
+
+        .quiz-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .quiz-card { background: var(--card-bg); border: 1px solid var(--card-border); padding: 15px; border-radius: 20px; text-align: center; }
+        .play-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border: none; padding: 10px 0; width: 100%; border-radius: 10px;
+            color: #000; font-weight: 700; cursor: pointer; margin-top: 10px;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 380px; background: rgba(20, 20, 20, 0.9);
+            backdrop-filter: blur(20px); display: flex; justify-content: space-around;
+            padding: 12px 0; border-radius: 25px; border: 1px solid var(--card-border);
+            z-index: 100;
+        }
+        .nav-item { text-align: center; color: #666; text-decoration: none; font-size: 10px; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item span { font-size: 20px; display: block; }
+
+        #noticeModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: #111; width: 85%; max-width: 350px; border-radius: 30px;
+            padding: 30px; border: 1px solid var(--primary); text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <div class="notice-bar">
+        <marquee id="scrollText">Loading updates...</marquee>
+    </div>
+
+    <div class="header">
+        <div class="user-info">
+            <p>Welcome back,</p>
+            <h2 id="userName">Loading... 👋</h2>
+        </div>
+        <div class="profile-icon-wrap">
+            <img id="userPhoto" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profile">
+        </div>
+    </div>
+
+    <div class="balance-card">
+        <div style="font-size: 12px; color: var(--text-dim);">TOTAL BALANCE</div>
+        <div class="balance-amount" id="usdBalance">$0.00</div>
+        <div class="coin-tag" id="coinBalance">🟡 0 Coins</div>
+    </div>
+
+    <div class="content-area">
+        <span class="section-label">Quick Tasks</span>
+        <div class="task-grid">
+            <a href="inbox-task.html" class="task-box"><span class="icon-wrap">💵</span>Inbox Task</a>
+            <a href="scratch.html" class="task-box"><span class="icon-wrap">🃏</span>Scratch</a>
+            <a href="captcha.html" class="task-box"><span class="icon-wrap">🤖</span>Captcha</a>
+        </div>
+
+        <span class="section-label">Premium Quizzes</span>
+        <div class="quiz-container">
+            <div class="quiz-card">
+                <div style="font-size: 30px;">🧮</div>
+                <h4>Math Quiz</h4>
+                <button class="play-btn" onclick="location.href='math-quiz.html'">PLAY NOW</button>
+            </div>
+            <div class="quiz-card">
+                <div style="font-size: 30px;">🧩</div>
+                <h4>Puzzle Quiz</h4>
+                <button class="play-btn" onclick="location.href='puzzle-quiz.html'">PLAY NOW</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item active"><span>🏠</span>Home</a>
+        <a href="tasks.html" class="nav-item"><span>📋</span>Tasks</a>
+        <a href="refer.html" class="nav-item"><span>🤝</span>Refer</a>
+        <a href="wallet.html" class="nav-item"><span>👛</span>Wallet</a>
+        <a onclick="logout()" class="nav-item"><span>🚪</span>Logout</a>
+    </div>
+</div>
+
+<div id="noticeModal">
+    <div class="modal-content">
+        <div style="font-size: 50px;">📢</div>
+        <h3 style="color: var(--primary); margin: 15px 0;">Official Notice</h3>
+        <p id="popupMsg" style="font-size: 13px; color: var(--text-dim); line-height: 1.6;">Loading announcement...</p>
+        <button class="play-btn" onclick="closePopup()">OK, UNDERSTOOD</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg",
+    authDomain: "micro-job-center.firebaseapp.com",
+    databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com",
+    projectId: "micro-job-center",
+    storageBucket: "micro-job-center.firebasestorage.app",
+    messagingSenderId: "146985711984",
+    appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const database = firebase.database();
+
+  // ১. ইউজার ডাটা এবং ব্যালেন্স রিয়েলটাইম লোড
+  auth.onAuthStateChanged((user) => {
+      if (user) {
+          // নাম এবং ছবি সেট করা
+          document.getElementById('userName').innerText = (user.displayName || "User") + " 👋";
+          if(user.photoURL) {
+              document.getElementById('userPhoto').src = user.photoURL;
+          }
+
+          // ডাটাবেস থেকে ব্যালেন্স এবং প্রোফাইল আপডেট
+          database.ref('users/' + user.uid).on('value', (snapshot) => {
+              const data = snapshot.val();
+              if (data) {
+                  const currentBalance = data.balance || 0;
+                  document.getElementById('coinBalance').innerHTML = `🟡 ${currentBalance} Coins`;
+                  document.getElementById('usdBalance').innerHTML = `$${(currentBalance / 1000).toFixed(2)}`;
+                  
+                  // ইমেইল লগইনের ক্ষেত্রে যদি ডাটাবেসে নাম থাকে
+                  if(!user.displayName && data.username) {
+                      document.getElementById('userName').innerText = data.username + " 👋";
+                  }
+              }
+          });
+
+          // অ্যাডমিন প্যানেল নোটিশ সিঙ্ক
+          syncWithAdmin();
+      } else {
+          // লগইন না থাকলে লগইন পেজে পাঠান
+          window.location.href = "login.html";
+      }
+  });
+
+  // ২. অ্যাডমিন প্যানেল ডাটা সিঙ্ক
+  function syncWithAdmin() {
+      database.ref('appSettings/scrollNotice').on('value', (snapshot) => {
+          const val = snapshot.val();
+          document.getElementById('scrollText').innerText = val ? val : "Welcome to Inbox Dollar! 🚀";
+      });
+
+      database.ref('appSettings/popupNotice').on('value', (snapshot) => {
+          const data = snapshot.val();
+          if(data && data.show === true) {
+              document.getElementById('popupMsg').innerText = data.text;
+              document.getElementById('noticeModal').style.display = 'flex';
+          }
+      });
+  }
+
+  function closePopup() {
+      document.getElementById('noticeModal').style.display = 'none';
+  }
+
+  function logout() {
+      auth.signOut().then(() => {
+          window.location.href = "login.html";
+      });
+  }
+</script>
+
+</body>
+</html>

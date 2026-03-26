@@ -3,104 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Tasks - Inbox Dollar</title>
+    <title>Inbox Tasks - Inbox Dollar</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --primary: #FF7B00; 
-            --dark-bg: #0A0A0A; 
-            --card: rgba(255,255,255,0.05); 
-            --card-border: rgba(255,255,255,0.1);
-        }
-        
-        * { box-sizing: border-box; }
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background: var(--dark-bg); 
-            color: white; 
-            padding: 20px; 
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container { width: 100%; max-width: 420px; }
-
-        .header { text-align: center; margin-bottom: 30px; margin-top: 20px; }
-        .header h3 { color: var(--primary); margin: 0; font-size: 22px; }
-        
-        #taskContainer { min-height: 200px; width: 100%; }
-
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; --card: rgba(255,255,255,0.05); }
+        body { font-family: 'Poppins', sans-serif; background: var(--dark-bg); color: white; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 420px; margin: auto; }
         .task-box { 
-            background: var(--card); 
-            border-radius: 20px; 
-            padding: 18px; 
-            border: 1px solid var(--card-border); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 15px;
-            transition: 0.3s;
+            background: var(--card); border-radius: 20px; padding: 15px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);
         }
-        
-        .task-box:active { transform: scale(0.98); }
-
-        .task-info { display: flex; align-items: center; gap: 15px; }
-        .task-icon { 
-            font-size: 24px; 
-            background: rgba(255,123,0,0.1); 
-            width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; 
-            border: 1px solid rgba(255,123,0,0.2);
-        }
-
-        .task-details { display: flex; flex-direction: column; }
-        .task-title { font-weight: 600; font-size: 14px; margin: 0; color: #fff; }
-        .task-reward { color: var(--primary); font-size: 12px; font-weight: 700; margin-top: 2px; }
-
-        .btn { 
-            background: linear-gradient(45deg, var(--primary), #FFB800); 
-            border: none; 
-            padding: 10px 20px; 
-            border-radius: 12px; 
-            color: #000; 
-            font-weight: 700; 
-            cursor: pointer; 
-            font-size: 12px;
-            box-shadow: 0 4px 15px rgba(255,123,0,0.2);
-        }
-
-        .loading { text-align: center; color: #888; margin-top: 50px; font-size: 14px; }
-        .back-btn { 
-            text-align: center; 
-            display: inline-block; 
-            margin-top: 30px; 
-            color: #888; 
-            text-decoration: none; 
-            font-size: 13px; 
-            padding: 10px 20px;
-            border-radius: 50px;
-            background: rgba(255,255,255,0.03);
-        }
+        .task-info { display: flex; align-items: center; gap: 12px; }
+        /* ছবি দেখানোর স্টাইল */
+        .task-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #1a1a1a; }
+        .task-title { font-weight: 600; font-size: 14px; margin: 0; }
+        .task-reward { color: var(--primary); font-size: 12px; font-weight: 700; }
+        .btn { background: var(--primary); border: none; padding: 8px 15px; border-radius: 10px; font-weight: 700; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div class="header">
-            <h3>Premium Offers</h3>
-            <p style="font-size: 12px; color: #888;">Complete tasks to earn coins instantly</p>
-        </div>
-
-        <div id="taskContainer">
-            <div class="loading">Loading offers... ⏳</div>
-        </div>
-
-        <div style="text-align: center;">
-            <a href="dashboard.html" class="back-btn">← Back to Home</a>
-        </div>
+        <h3 style="text-align:center; color:var(--primary);">Inbox Tasks</h3>
+        <div id="taskContainer"><p style="text-align:center; color:#888;">Loading offers...</p></div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -118,60 +44,44 @@
             appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" 
         };
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.database();
+        const auth = firebase.auth();
 
-        // ইউজার লগইন চেক
-        auth.onAuthStateChanged((user) => {
-            if (!user) {
-                window.location.href = "login.html"; // লগইন পেজ অনুযায়ী নাম ঠিক করবেন
-            }
-        });
-
-        // অ্যাডমিন প্যানেল থেকে অফার রিয়েল-টাইমে লোড করা
+        // অফার লোড করা (ইমেজ সহ)
         db.ref('cpaOffers').on('value', (snapshot) => {
             const container = document.getElementById('taskContainer');
             container.innerHTML = ""; 
-            
             if (snapshot.exists()) {
                 snapshot.forEach((child) => {
                     const data = child.val();
-                    const offerId = child.key;
+                    // যদি icon ফিল্ডে লিঙ্ক থাকে তবে ছবি দেখাবে, না থাকলে ডিফল্ট ইমোজি
+                    const displayMedia = data.icon.startsWith('http') 
+                        ? `<img src="${data.icon}" class="task-img">` 
+                        : `<div class="task-img" style="display:flex; align-items:center; justify-content:center; font-size:24px;">${data.icon || '🎁'}</div>`;
+
                     container.innerHTML += `
                         <div class="task-box">
                             <div class="task-info">
-                                <div class="task-icon">${data.icon || '🎁'}</div>
+                                ${displayMedia}
                                 <div class="task-details">
                                     <p class="task-title">${data.title}</p>
                                     <span class="task-reward">+${data.reward} Coins</span>
                                 </div>
                             </div>
-                            <button class="btn" onclick="claimOffer('${offerId}', '${data.link}', ${data.reward})">CLAIM</button>
-                        </div>
-                    `;
+                            <button class="btn" onclick="claimOffer('${child.key}', '${data.link}', ${data.reward})">CLAIM</button>
+                        </div>`;
                 });
             } else {
-                container.innerHTML = "<p style='text-align:center; color:#666; margin-top:50px;'>No offers available right now. Check back later!</p>";
+                container.innerHTML = "<p style='text-align:center; color:#666;'>No offers active.</p>";
             }
         });
 
-        // অফার ক্লেইম করার ফাংশন
         function claimOffer(id, link, reward) {
             const user = auth.currentUser;
-            if(!user) return;
-
-            // অফার লিঙ্কে পাঠানো
+            if(!user) return alert("Please Login First!");
             window.open(link, '_blank');
-
-            // ব্যালেন্স আপডেট (Transaction ব্যবহার করা হয়েছে যাতে ডাটা মিস না হয়)
-            db.ref('users/' + user.uid + '/balance').transaction((currentBalance) => {
-                return (currentBalance || 0) + parseInt(reward);
-            }).then(() => {
-                // ইউজারকে একটি কনফার্মেশন মেসেজ দেখানো
-                alert("Task Started! " + reward + " Coins will be added to your balance.");
-            }).catch((err) => {
-                console.error("Reward addition failed:", err);
-            });
+            db.ref('users/' + user.uid + '/balance').transaction(c => (c || 0) + parseInt(reward))
+            .then(() => alert(reward + " Coins added!"));
         }
     </script>
 </body>

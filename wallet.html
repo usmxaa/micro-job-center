@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wallet - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; --card: #1A1A1A; }
+        body { font-family: 'Poppins', sans-serif; background: var(--dark-bg); color: white; margin: 0; padding: 20px; }
+        
+        .balance-card { 
+            background: linear-gradient(135deg, var(--primary), #FF5500); 
+            padding: 30px; border-radius: 25px; text-align: center; margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(255,123,0,0.2);
+        }
+        .balance-card h2 { margin: 0; font-size: 14px; opacity: 0.9; }
+        .balance-card p { margin: 10px 0 0; font-size: 32px; font-weight: 800; }
+
+        .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .method-item { 
+            background: var(--card); padding: 20px; border-radius: 20px; 
+            text-align: center; border: 2px solid transparent; cursor: pointer; transition: 0.3s;
+        }
+        .method-item.active { border-color: var(--primary); background: rgba(255,123,0,0.05); }
+        .method-icon { font-size: 24px; margin-bottom: 10px; display: block; }
+        .method-name { font-size: 13px; font-weight: 600; }
+
+        .input-box { background: var(--card); padding: 20px; border-radius: 20px; margin-top: 10px; }
+        input { 
+            width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #333; 
+            background: #111; color: white; margin-bottom: 15px; outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+
+        .withdraw-btn { 
+            background: var(--primary); color: black; border: none; width: 100%; 
+            padding: 15px; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 16px; transition: 0.3s;
+        }
+        .withdraw-btn:active { transform: scale(0.95); }
+        .back-btn { text-align: center; display: block; margin-top: 20px; color: #888; text-decoration: none; font-size: 14px; cursor: pointer; }
+
+        /* হিস্ট্রি সেকশনের স্টাইল (নতুন যোগ করা হয়েছে, ডিজাইন নষ্ট করবে না) */
+        .history-section { margin-top: 40px; padding-bottom: 20px; }
+        .history-item { 
+            background: var(--card); padding: 15px; border-radius: 15px; 
+            margin-bottom: 10px; border-left: 4px solid #444; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="balance-card">
+        <h2>Available Balance</h2>
+        <p id="userBalance">Loading... 🟡</p>
+    </div>
+
+    <h3 style="font-size: 16px; margin-left: 5px;">Select Method</h3>
+    <div class="method-grid">
+        <div class="method-item" onclick="selectMethod('Binance', this)">
+            <span class="method-icon">🔶</span>
+            <span class="method-name">Binance</span>
+        </div>
+        <div class="method-item" onclick="selectMethod('USDT', this)">
+            <span class="method-icon">💲</span>
+            <span class="method-name">USDT (TRC20)</span>
+        </div>
+        <div class="method-item" onclick="selectMethod('Bitcoin', this)">
+            <span class="method-icon">₿</span>
+            <span class="method-name">Bitcoin</span>
+        </div>
+        <div class="method-item" onclick="selectMethod('Bkash', this)">
+            <span class="method-icon">📱</span>
+            <span class="method-name">Bkash</span>
+        </div>
+    </div>
+
+    <div class="input-box">
+        <input type="text" id="accountNo" placeholder="Account Number / Wallet Address">
+        <input type="number" id="amount" placeholder="Enter Amount (Coins)">
+        <button class="withdraw-btn" onclick="submitWithdraw()">WITHDRAW NOW</button>
+    </div>
+
+    <div class="history-section" id="historySection">
+        <h3 style="font-size: 16px; margin-left: 5px; margin-bottom: 15px;">Withdraw History</h3>
+        <div id="historyList">
+            <p style="font-size: 12px; color: #666; text-align: center;">Loading history...</p>
+        </div>
+    </div>
+
+    <a onclick="location.href='dashboard.html'" class="back-btn">← Back to Home</a>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg", 
+            authDomain: "micro-job-center.firebaseapp.com", 
+            databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com", 
+            projectId: "micro-job-center", 
+            storageBucket: "micro-job-center.firebasestorage.app", 
+            messagingSenderId: "146985711984", 
+            appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let selectedMethodName = "";
+        let currentBalance = 0;
+        let userName = "";
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.ref('users/' + user.uid).on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        // অ্যাডমিন ব্লক চেক
+                        if (data.isBlocked === true) {
+                            alert("Your account is blocked!");
+                            auth.signOut().then(() => window.location.href = "index.html");
+                            return;
+                        }
+                        currentBalance = data.balance || 0;
+                        userName = data.username || "User";
+                        document.getElementById('userBalance').innerText = currentBalance + " 🟡";
+                        
+                        // হিস্ট্রি লোড করা
+                        loadWithdrawHistory(user.uid);
+                    }
+                });
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        function selectMethod(method, element) {
+            selectedMethodName = method;
+            const items = document.querySelectorAll('.method-item');
+            items.forEach(i => i.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        function loadWithdrawHistory(uid) {
+            db.ref('withdrawRequests').orderByChild('uid').equalTo(uid).on('value', (snapshot) => {
+                let html = "";
+                if (!snapshot.exists()) {
+                    html = "<p style='font-size:12px; color:#666; text-align:center;'>No history found.</p>";
+                } else {
+                    snapshot.forEach(child => {
+                        const data = child.val();
+                        let statusColor = data.status === "Pending" ? "#FF7B00" : (data.status === "Approved" ? "#00FF00" : "#FF0000");
+                        html += `
+                            <div class="history-item" style="border-left-color: ${statusColor}">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:14px; font-weight:600;">${data.method}</span>
+                                    <span style="font-size:12px; font-weight:700; color:${statusColor}">${data.status.toUpperCase()}</span>
+                                </div>
+                                <div style="font-size:11px; color:#888; margin-top:5px;">
+                                    Amount: ${data.amount} 🟡 | Wallet: ${data.account}
+                                </div>
+                            </div>`;
+                    });
+                }
+                document.getElementById('historyList').innerHTML = html;
+            });
+        }
+
+        function submitWithdraw() {
+            const account = document.getElementById('accountNo').value.trim();
+            const amount = parseInt(document.getElementById('amount').value);
+            const user = auth.currentUser;
+
+            if (!user) return;
+            if (!selectedMethodName) return alert("Please select a method!");
+            if (!account || !amount) return alert("Please fill all details!");
+            if (amount < 1000) return alert("Minimum withdrawal is 1000 coins!");
+            if (amount > currentBalance) return alert("Insufficient balance!");
+
+            const requestData = {
+                uid: user.uid,
+                name: userName,
+                method: selectedMethodName,
+                account: account,
+                amount: amount,
+                status: "Pending",
+                timestamp: Date.now()
+            };
+
+            db.ref('withdrawRequests').push(requestData).then(() => {
+                db.ref('users/' + user.uid).update({
+                    balance: currentBalance - amount
+                }).then(() => {
+                    alert("Withdrawal Request Sent! ✅");
+                    document.getElementById('accountNo').value = "";
+                    document.getElementById('amount').value = "";
+                });
+            }).catch(err => alert("Error: " + err.message));
+        }
+    </script>
+</body>
+</html>

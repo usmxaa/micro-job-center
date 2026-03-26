@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offerwall - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; }
+        body { font-family: 'Poppins', sans-serif; background: var(--dark-bg); color: white; padding: 20px; text-align: center; margin: 0; }
+        .offer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
+        .offer-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; text-decoration: none; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .offer-card:hover { border-color: var(--primary); transform: translateY(-5px); background: rgba(255, 123, 0, 0.05); }
+        .offer-icon { font-size: 35px; margin-bottom: 10px; }
+        .offer-name { font-size: 15px; font-weight: 600; margin-bottom: 5px; }
+        .offer-val { font-weight: bold; color: var(--primary); font-size: 13px; }
+        .back-link { margin-top: 40px; color: #888; cursor: pointer; display: inline-block; text-decoration: none; font-size: 14px; transition: 0.3s; }
+        .back-link:hover { color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div style="margin-top: 20px;">
+        <h3>Offerwall</h3>
+        <p style="color: #666; font-size: 12px;">পছন্দমতো টাস্ক কমপ্লিট করে কয়েন জিতুন</p>
+    </div>
+    
+    <div class="offer-grid">
+        <div class="offer-card" onclick="goToTask('video-ad.html')">
+            <div class="offer-icon">🎬</div>
+            <div class="offer-name">Watch Ad</div>
+            <div class="offer-val">+50 Coins</div>
+        </div>
+
+        <div class="offer-card" onclick="goToTask('math-quiz.html')">
+            <div class="offer-icon">🧮</div>
+            <div class="offer-name">Math Quiz</div>
+            <div class="offer-val">+30 Coins</div>
+        </div>
+
+        <div class="offer-card" onclick="goToTask('spinner.html')">
+            <div class="offer-icon">🎡</div>
+            <div class="offer-name">Lucky Spin</div>
+            <div class="offer-val">+20 Coins</div>
+        </div>
+
+        <div class="offer-card" onclick="goToTask('scratch.html')">
+            <div class="offer-icon">💳</div>
+            <div class="offer-name">Scratch</div>
+            <div class="offer-val">+15 Coins</div>
+        </div>
+    </div>
+
+    <a class="back-link" onclick="location.href='dashboard.html'">← Back to Home</a>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg", 
+            authDomain: "micro-job-center.firebaseapp.com", 
+            databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com", 
+            projectId: "micro-job-center", 
+            storageBucket: "micro-job-center.firebasestorage.app", 
+            messagingSenderId: "146985711984", 
+            appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // আপনার স্মার্ট লিঙ্ক
+        const smartLink = "https://www.profitablecpmratenetwork.com/uu5c1ia75?key=74b276b8394ac571c3400dbe1c55b86e";
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = "index.html";
+            }
+        });
+
+        // টাস্ক পেজে যাওয়ার ফাংশন (সাথে অ্যাড ওপেন হবে)
+        function goToTask(pageName) {
+            // ১. স্মার্ট লিঙ্কটি নতুন ট্যাবে ওপেন হবে
+            window.open(smartLink, '_blank');
+            
+            // ২. সাথে সাথেই ইউজারকে আসল টাস্ক পেজে নিয়ে যাবে
+            setTimeout(() => {
+                location.href = pageName;
+            }, 100); 
+        }
+    </script>
+</body>
+</html>

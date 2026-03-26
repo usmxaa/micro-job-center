@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; }
+        body { font-family: 'Poppins', sans-serif; background: var(--dark-bg); color: white; padding: 20px; }
+        .rank-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .rank-no { background: var(--primary); color: #000; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+        .name { flex: 1; margin-left: 15px; font-weight: 600; font-size: 14px; }
+        .coins { color: var(--primary); font-weight: 700; font-size: 14px; }
+        /* ব্যাক বাটন স্টাইল */
+        .back-link { text-align: center; display: block; margin-top: 30px; color: #888; text-decoration: none; font-size: 14px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h3 style="text-align: center;">Top 10 Earners 🏆</h3>
+    <div id="rankList">Loading Ranking...</div>
+
+    <a onclick="location.href='dashboard.html'" class="back-link">← Back to Home</a>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg", 
+            authDomain: "micro-job-center.firebaseapp.com", 
+            databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com", 
+            projectId: "micro-job-center", 
+            storageBucket: "micro-job-center.firebasestorage.app", 
+            messagingSenderId: "146985711984", 
+            appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // পরিবর্তন ২: লগইন চেক (ইউজার না থাকলে index.html এ যাবে)
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = "index.html";
+            }
+        });
+
+        db.ref('users').orderByChild('balance').limitToLast(10).on('value', (snapshot) => {
+            let listHtml = "";
+            let rank = 1;
+            let users = [];
+            
+            if (snapshot.exists()) {
+                snapshot.forEach(child => { 
+                    users.push(child.val()); 
+                });
+                
+                users.reverse().forEach(u => {
+                    listHtml += `<div class="rank-item">
+                        <div class="rank-no">${rank++}</div>
+                        <div class="name">${u.username || 'User'}</div>
+                        <div class="coins">🟡 ${u.balance || 0}</div>
+                    </div>`;
+                });
+                document.getElementById('rankList').innerHTML = listHtml;
+            } else {
+                document.getElementById('rankList').innerHTML = "<p style='text-align:center; color:#666;'>No data available</p>";
+            }
+        });
+    </script>
+</body>
+</html>

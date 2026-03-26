@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Tasks - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF7B00; 
+            --dark-bg: #0A0A0A;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-main: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            margin: 0; padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .back-btn { text-decoration: none; color: var(--primary); font-size: 24px; cursor: pointer; }
+
+        .balance-status {
+            background: var(--card-bg); padding: 15px; border-radius: 15px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 25px;
+        }
+
+        .task-card {
+            background: var(--card-bg); border-radius: 20px;
+            padding: 20px; margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .task-info h4 { margin: 0; font-size: 16px; }
+        .task-info p { margin: 5px 0 0; font-size: 12px; color: #aaa; }
+
+        .reward-tag { color: var(--primary); font-weight: 700; font-size: 14px; }
+
+        .play-btn {
+            background: var(--primary); border: none; padding: 8px 15px;
+            border-radius: 10px; color: #000; font-weight: 700; cursor: pointer;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 380px; background: rgba(20, 20, 20, 0.9);
+            backdrop-filter: blur(20px); display: flex; justify-content: space-around;
+            padding: 12px 0; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+        }
+        .nav-item { text-align: center; color: #666; text-decoration: none; font-size: 10px; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item span { font-size: 20px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a onclick="location.href='dashboard.html'" class="back-btn">←</a>
+        <h3>All Tasks</h3>
+    </div>
+
+    <div class="balance-status">
+        <span style="font-size: 12px; color: #888;">Your Balance:</span>
+        <h2 id="coinBalance" style="margin: 5px 0; color: var(--primary);">🟡 0 Coins</h2>
+    </div>
+
+    <div class="task-card">
+        <div class="task-info">
+            <h4>Daily Check-in</h4>
+            <p>Get your daily reward</p>
+            <span class="reward-tag">+50 Coins</span>
+        </div>
+        <button class="play-btn" onclick="claimDaily()">CLAIM</button>
+    </div>
+
+    <div class="task-card">
+        <div class="task-info">
+            <h4>Watch Video Ad</h4>
+            <p>Watch full video to earn</p>
+            <span class="reward-tag">+20 Coins</span>
+        </div>
+        <button class="play-btn" onclick="alert('Ads Loading...')">WATCH</button>
+    </div>
+
+    <div class="bottom-nav">
+        <a onclick="location.href='dashboard.html'" class="nav-item"><span>🏠</span>Home</a>
+        <a onclick="location.href='tasks.html'" class="nav-item active"><span>📋</span>Tasks</a>
+        <a onclick="location.href='refer.html'" class="nav-item"><span>🤝</span>Refer</a>
+        <a onclick="location.href='wallet.html'" class="nav-item"><span>👛</span>Wallet</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg",
+            authDomain: "micro-job-center.firebaseapp.com",
+            databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com",
+            projectId: "micro-job-center",
+            storageBucket: "micro-job-center.firebasestorage.app",
+            messagingSenderId: "146985711984",
+            appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let currentUid = null;
+        let currentBalance = 0;
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUid = user.uid;
+                db.ref('users/' + user.uid).on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        currentBalance = data.balance || 0;
+                        document.getElementById('coinBalance').innerText = `🟡 ${currentBalance} Coins`;
+                    }
+                });
+            } else {
+                // পরিবর্তন ৩: লগইন না থাকলে index.html (নতুন লগইন পেজ) এ যাবে
+                window.location.href = "index.html";
+            }
+        });
+
+        // ব্যালেন্স বাড়ানোর ফাংশন (Firebase এ সেভ হবে)
+        function claimDaily() {
+            if (!currentUid) {
+                window.location.href = "index.html";
+                return;
+            }
+            const newBalance = currentBalance + 50;
+            db.ref('users/' + currentUid).update({
+                balance: newBalance
+            }).then(() => {
+                alert("Success! You got 50 Coins.");
+            }).catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+    </script>
+</body>
+</html>

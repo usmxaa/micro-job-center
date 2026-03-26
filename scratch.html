@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch & Win - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; --card-bg: rgba(255, 255, 255, 0.05); }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--dark-bg); color: white; margin: 0; padding: 20px; text-align: center; }
+        .scratch-card { width: 300px; height: 150px; background: #333; margin: 40px auto; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 2px dashed var(--primary); cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
+        .reward-msg { color: var(--primary); margin-top: 20px; font-weight: 600; min-height: 24px; }
+        .timer-text { font-size: 18px; color: var(--primary); margin-bottom: 10px; font-weight: 600; }
+        .btn-home { background: transparent; border: 1px solid #444; padding: 10px 25px; border-radius: 10px; color: #888; cursor: pointer; margin-top: 20px; text-decoration: none; display: inline-block; font-size: 14px; }
+        #cooldown { color: #FF4444; font-size: 14px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <h3 style="margin-top: 30px;">Scratch and Win</h3>
+    
+    <div id="timerDisplay" class="timer-text">Click to Scratch</div>
+
+    <div class="scratch-card" id="card" onclick="startScratch()">SCRATCH HERE</div>
+    
+    <div id="rewardMsg" class="reward-msg"></div>
+    <div id="cooldown">পরবর্তী কার্ডের জন্য অপেক্ষা করুন...</div>
+
+    <br>
+    <a href="dashboard.html" class="btn-home">← Back to Home</a>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg", 
+            authDomain: "micro-job-center.firebaseapp.com", 
+            databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com", 
+            projectId: "micro-job-center", 
+            storageBucket: "micro-job-center.firebasestorage.app", 
+            messagingSenderId: "146985711984", 
+            appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        const smartLink = "https://www.profitablecpmratenetwork.com/uu5c1ia75?key=74b276b8394ac571c3400dbe1c55b86e";
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) window.location.href = "index.html";
+        });
+
+        function startScratch() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            // ১. অ্যাড ওপেন করা
+            window.open(smartLink, '_blank');
+
+            const card = document.getElementById('card');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const rewardMsg = document.getElementById('rewardMsg');
+            
+            card.onclick = null; // বাটন ডিজেবল
+            card.style.background = "var(--card-bg)";
+            card.innerText = "⌛ CHECKING...";
+            rewardMsg.innerText = "অ্যাডটি দেখুন, রিওয়ার্ড প্রসেস হচ্ছে...";
+
+            // ২. ১০ সেকেন্ড টাইমার শুরু
+            let timeLeft = 10;
+            timerDisplay.innerText = "অপেক্ষা করুন: " + timeLeft + "s";
+
+            const countdown = setInterval(() => {
+                timeLeft--;
+                if(timeLeft > 0) {
+                    timerDisplay.innerText = "অপেক্ষা করুন: " + timeLeft + "s";
+                } else {
+                    clearInterval(countdown);
+                    timerDisplay.innerText = "DONE!";
+                    addReward(user.uid);
+                }
+            }, 1000);
+        }
+
+        function addReward(uid) {
+            const rewardAmt = 15; // স্ক্র্যাচ রিওয়ার্ড ১৫ কয়েন
+            db.ref('users/' + uid + '/balance').transaction(c => (c || 0) + rewardAmt)
+            .then(() => {
+                const card = document.getElementById('card');
+                card.innerText = "💰 " + rewardAmt;
+                document.getElementById('rewardMsg').innerText = "অভিনন্দন! আপনি " + rewardAmt + " কয়েন পেয়েছেন। ✅";
+                startCooldown();
+            }).catch(err => {
+                alert("Error: " + err.message);
+                resetCard();
+            });
+        }
+
+        function startCooldown() {
+            let waitTime = 5;
+            const cooldownText = document.getElementById('cooldown');
+            const timerDisplay = document.getElementById('timerDisplay');
+
+            cooldownText.style.display = "block";
+
+            const waitInterval = setInterval(() => {
+                waitTime--;
+                timerDisplay.innerText = "পরবর্তী কার্ড: " + waitTime + "s";
+                
+                if(waitTime <= 0) {
+                    clearInterval(waitInterval);
+                    resetCard();
+                }
+            }, 1000);
+        }
+
+        function resetCard() {
+            const card = document.getElementById('card');
+            const cooldownText = document.getElementById('cooldown');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const rewardMsg = document.getElementById('rewardMsg');
+
+            card.style.background = "#333";
+            card.style.border = "2px dashed var(--primary)";
+            card.innerText = "SCRATCH HERE";
+            card.onclick = startScratch;
+            
+            cooldownText.style.display = "none";
+            timerDisplay.innerText = "Click to Scratch";
+            rewardMsg.innerText = "";
+        }
+    </script>
+</body>
+</html>

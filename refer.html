@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refer & Earn - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF7B00; 
+            --secondary: #FFB800;
+            --dark-bg: #0A0A0A;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #FFFFFF;
+            --text-dim: #A0A0A0;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            margin: 0; padding: 20px;
+            padding-bottom: 110px;
+            display: flex; justify-content: center;
+        }
+
+        .app-shell { width: 100%; max-width: 420px; }
+
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .back-btn { text-decoration: none; color: var(--primary); font-size: 24px; font-weight: bold; cursor: pointer; }
+
+        .refer-hero {
+            background: var(--card-bg);
+            border-radius: 30px;
+            border: 1px solid var(--card-border);
+            padding: 40px 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .refer-hero::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,123,0,0.1) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        .gift-icon { font-size: 60px; margin-bottom: 20px; display: block; }
+        .refer-hero h2 { margin: 10px 0; font-size: 22px; color: var(--primary); }
+        .refer-hero p { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+        .code-box {
+            background: rgba(0,0,0,0.3);
+            border: 2px dashed var(--primary);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 25px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .promo-code { font-size: 20px; font-weight: 800; letter-spacing: 3px; color: var(--secondary); }
+        .copy-btn {
+            background: var(--primary); border: none; padding: 8px 15px;
+            border-radius: 10px; color: #000; font-weight: 700; cursor: pointer;
+        }
+
+        .share-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border: none; padding: 16px; width: 100%; border-radius: 18px;
+            color: #000; font-weight: 700; cursor: pointer; font-size: 16px;
+            box-shadow: 0 10px 20px rgba(255, 123, 0, 0.2);
+        }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
+        .stat-box {
+            background: var(--card-bg); padding: 20px; border-radius: 20px;
+            border: 1px solid var(--card-border); text-align: center;
+        }
+        .stat-box h4 { margin: 0; font-size: 12px; color: var(--text-dim); text-transform: uppercase; }
+        .stat-box div { font-size: 20px; font-weight: 700; margin-top: 8px; color: var(--primary); }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 380px; background: rgba(20, 20, 20, 0.9);
+            backdrop-filter: blur(20px); display: flex; justify-content: space-around;
+            padding: 12px 0; border-radius: 25px; border: 1px solid var(--card-border);
+            z-index: 100;
+        }
+        .nav-item { text-align: center; color: #666; text-decoration: none; font-size: 10px; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item span { font-size: 20px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <div class="header">
+        <a onclick="location.href='dashboard.html'" class="back-btn">←</a>
+        <h3 style="margin: 0;">Refer & Earn</h3>
+    </div>
+
+    <div class="refer-hero">
+        <span class="gift-icon">🎁</span>
+        <h2>Invite Friends & Earn</h2>
+        <p>Share your code with friends. When they join, you both get <b>100 Coins</b> bonus!</p>
+        
+        <div class="code-box">
+            <div class="promo-code" id="myReferCode">LOADING...</div>
+            <button class="copy-btn" onclick="copyCode()">COPY</button>
+        </div>
+
+        <button class="share-btn" onclick="shareApp()">INVITE FRIENDS NOW</button>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-box">
+            <h4>Total Refers</h4>
+            <div id="totalRefers">0</div>
+        </div>
+        <div class="stat-box">
+            <h4>Earned</h4>
+            <div id="referEarning">0 Coins</div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a onclick="location.href='dashboard.html'" class="nav-item"><span>🏠</span>Home</a>
+        <a onclick="location.href='tasks.html'" class="nav-item"><span>📋</span>Tasks</a>
+        <a onclick="location.href='refer.html'" class="nav-item active"><span>🤝</span>Refer</a>
+        <a onclick="location.href='wallet.html'" class="nav-item"><span>👛</span>Wallet</a>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg",
+        authDomain: "micro-job-center.firebaseapp.com",
+        databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com",
+        projectId: "micro-job-center",
+        storageBucket: "micro-job-center.firebasestorage.app",
+        messagingSenderId: "146985711984",
+        appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            const referCode = user.uid.substring(0, 6).toUpperCase();
+            document.getElementById('myReferCode').innerText = referCode;
+
+            db.ref('users/' + user.uid).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const total = data.totalRefers || 0;
+                    document.getElementById('totalRefers').innerText = total;
+                    document.getElementById('referEarning').innerText = (total * 100) + " Coins";
+                }
+            });
+        } else {
+            // পরিবর্তন ৩: লগইন না থাকলে index.html (নতুন লগইন পেজ) এ যাবে
+            window.location.href = "index.html";
+        }
+    });
+
+    function copyCode() {
+        const code = document.getElementById('myReferCode').innerText;
+        navigator.clipboard.writeText(code).then(() => {
+            alert("Refer code copied: " + code);
+        });
+    }
+
+    function shareApp() {
+        const code = document.getElementById('myReferCode').innerText;
+        const shareText = `Hey! Join Inbox Dollar and earn money daily. Use my refer code: ${code}. Join now: ${window.location.origin}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'Inbox Dollar',
+                text: shareText,
+                url: window.location.origin
+            });
+        } else {
+            alert("Share this code: " + code);
+        }
+    }
+</script>
+</body>
+</html>

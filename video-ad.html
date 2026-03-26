@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch & Earn - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; }
+        body { font-family: 'Poppins', sans-serif; background: var(--dark-bg); color: white; text-align: center; padding: 20px; margin: 0; }
+        .video-box { width: 100%; max-width: 350px; height: 220px; background: #1a1a1a; margin: 40px auto; border-radius: 25px; display: flex; align-items: center; justify-content: center; flex-direction: column; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .timer { font-size: 32px; color: var(--primary); font-weight: 800; margin-top: 10px; }
+        .btn { background: var(--primary); border: none; padding: 15px 40px; border-radius: 15px; color: #000; font-weight: 700; cursor: pointer; margin-top: 20px; font-size: 16px; transition: 0.3s; width: 220px; }
+        .btn:disabled { background: #333; color: #666; cursor: not-allowed; transform: scale(1); }
+        .btn:active { transform: scale(0.95); }
+        .back-link { margin-top: 30px; color: #555; cursor: pointer; display: inline-block; text-decoration: none; font-size: 14px; }
+        #cooldown { color: #FF4444; font-size: 14px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <div style="margin-top: 40px;">
+        <h3>Watch Video Ads</h3>
+        <p style="color: #888; font-size: 12px;">১০ সেকেন্ড অ্যাড দেখে ৩০ কয়েন ইনকাম করুন</p>
+    </div>
+
+    <div class="video-box">
+        <div id="icon" style="font-size: 60px; margin-bottom: 10px;">📺</div>
+        <div id="status" style="font-size: 14px; color: #aaa;">রিওয়ার্ড পেতে অপেক্ষা করুন</div>
+        <div class="timer" id="timer">10s</div>
+    </div>
+
+    <button class="btn" id="startBtn" onclick="startAd()">START WATCHING</button>
+    <div id="cooldown">পরবর্তী ভিডিওর জন্য অপেক্ষা করুন...</div>
+    <br>
+    
+    <a class="back-link" onclick="location.href='dashboard.html'">← Back to Home</a>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg", 
+            authDomain: "micro-job-center.firebaseapp.com", 
+            databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com", 
+            projectId: "micro-job-center", 
+            storageBucket: "micro-job-center.firebasestorage.app", 
+            messagingSenderId: "146985711984", 
+            appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        const smartLink = "https://www.profitablecpmratenetwork.com/uu5c1ia75?key=74b276b8394ac571c3400dbe1c55b86e";
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) window.location.href = "index.html";
+        });
+
+        function startAd() {
+            const user = auth.currentUser;
+            if(!user) return;
+
+            window.open(smartLink, '_blank');
+
+            let timeLeft = 10;
+            const btn = document.getElementById('startBtn');
+            const timerDisplay = document.getElementById('timer');
+            const statusText = document.getElementById('status');
+            
+            btn.disabled = true;
+            btn.innerText = "WATCHING...";
+            statusText.innerText = "অ্যাড লোড হচ্ছে...";
+
+            const countdown = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = timeLeft + "s";
+                
+                if(timeLeft <= 0) {
+                    clearInterval(countdown);
+                    timerDisplay.innerText = "DONE!";
+                    addReward(user.uid);
+                }
+            }, 1000);
+        }
+
+        function addReward(uid) {
+            db.ref('users/' + uid + '/balance').transaction(c => (c || 0) + 30)
+            .then(() => {
+                document.getElementById('status').innerText = "ব্যালেন্স অ্যাড হয়েছে! 🎉";
+                startCooldown(); // ৫ সেকেন্ডের বিরতি শুরু
+            }).catch(err => {
+                alert("Error: " + err.message);
+                resetButton();
+            });
+        }
+
+        function startCooldown() {
+            let waitTime = 5;
+            const btn = document.getElementById('startBtn');
+            const cooldownText = document.getElementById('cooldown');
+            const timerDisplay = document.getElementById('timer');
+
+            btn.style.display = "none";
+            cooldownText.style.display = "block";
+            timerDisplay.innerText = waitTime + "s";
+
+            const waitInterval = setInterval(() => {
+                waitTime--;
+                timerDisplay.innerText = waitTime + "s";
+                
+                if(waitTime <= 0) {
+                    clearInterval(waitInterval);
+                    resetButton();
+                }
+            }, 1000);
+        }
+
+        function resetButton() {
+            const btn = document.getElementById('startBtn');
+            const cooldownText = document.getElementById('cooldown');
+            const timerDisplay = document.getElementById('timer');
+            const statusText = document.getElementById('status');
+
+            btn.style.display = "inline-block";
+            btn.disabled = false;
+            btn.innerText = "START WATCHING";
+            cooldownText.style.display = "none";
+            timerDisplay.innerText = "10s";
+            statusText.innerText = "রিওয়ার্ড পেতে অপেক্ষা করুন";
+        }
+    </script>
+</body>
+</html>

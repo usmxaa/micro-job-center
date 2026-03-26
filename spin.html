@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Spin - Inbox Dollar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #FF7B00; --dark-bg: #0A0A0A; }
+        body { font-family: 'Poppins', sans-serif; background: var(--dark-bg); color: white; text-align: center; padding: 20px; margin: 0; }
+        .app-shell { max-width: 420px; margin: auto; }
+        
+        .wheel-container { position: relative; margin: 50px auto; width: 260px; height: 260px; }
+        .wheel { 
+            width: 250px; height: 250px; border: 8px solid var(--primary); 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            transition: 4s cubic-bezier(0.1, 0, 0.1, 1); 
+            background: radial-gradient(#222, #000); 
+            font-weight: 800; font-size: 20px; color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 123, 0, 0.2);
+        }
+        .wheel-container::before {
+            content: '▼'; position: absolute; top: -15px; left: 50%; 
+            transform: translateX(-50%); color: var(--primary); font-size: 24px; z-index: 10;
+        }
+
+        .spin-btn { 
+            background: var(--primary); color: #000; border: none; 
+            padding: 15px 50px; border-radius: 50px; font-weight: 800; 
+            cursor: pointer; font-size: 16px; margin-top: 20px; transition: 0.3s; width: 220px;
+        }
+        .spin-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        
+        .back-link { margin-top: 30px; color: #888; cursor: pointer; display: inline-block; text-decoration: none; font-size: 14px; }
+        #cooldown { color: #FF4444; font-size: 14px; margin-top: 10px; display: none; }
+        #timer-text { font-size: 18px; color: var(--primary); margin-top: 10px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <h3 style="margin-top: 30px;">Lucky Spin Wheel</h3>
+        
+        <div class="wheel-container">
+            <div class="wheel" id="wheel">💰 SPIN</div>
+        </div>
+
+        <div id="timer-text">Spin to Earn</div>
+        <button class="spin-btn" id="spinBtn" onclick="startSpin()">SPIN NOW</button>
+        <div id="cooldown">পরবর্তী স্পিনের জন্য অপেক্ষা করুন...</div>
+        <br>
+        
+        <a class="back-link" onclick="location.href='dashboard.html'">← Back to Home</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCqI9Te8ffBptsDS-oAIwPjpa5YSSpygYg", 
+            authDomain: "micro-job-center.firebaseapp.com", 
+            databaseURL: "https://micro-job-center-default-rtdb.firebaseio.com", 
+            projectId: "micro-job-center", 
+            storageBucket: "micro-job-center.firebasestorage.app", 
+            messagingSenderId: "146985711984", 
+            appId: "1:146985711984:web:fcb79dd1e82f0f4972b7b5" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        const smartLink = "https://www.profitablecpmratenetwork.com/uu5c1ia75?key=74b276b8394ac571c3400dbe1c55b86e";
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) window.location.href = "index.html";
+        });
+
+        function startSpin() {
+            const user = auth.currentUser;
+            if(!user) return;
+
+            // ১. অ্যাড ওপেন করা
+            window.open(smartLink, '_blank');
+
+            const wheel = document.getElementById('wheel');
+            const spinBtn = document.getElementById('spinBtn');
+            const timerText = document.getElementById('timer-text');
+            
+            spinBtn.disabled = true;
+            spinBtn.innerText = "SPINNING...";
+            
+            // চাকা ঘোরানো (৪ সেকেন্ড অ্যানিমেশন)
+            const randDeg = Math.floor(Math.random() * 360) + 1800; 
+            wheel.style.transform = `rotate(${randDeg}deg)`;
+
+            // ২. ১০ সেকেন্ডের টোটাল টাইমার শুরু
+            let timeLeft = 10;
+            timerText.innerText = "অ্যাড দেখুন: " + timeLeft + "s";
+
+            const countdown = setInterval(() => {
+                timeLeft--;
+                if(timeLeft > 0) {
+                    timerText.innerText = "অ্যাড দেখুন: " + timeLeft + "s";
+                } else {
+                    clearInterval(countdown);
+                    timerText.innerText = "DONE!";
+                    addReward(user.uid);
+                }
+            }, 1000);
+        }
+
+        function addReward(uid) {
+            const winAmt = 20; // স্পিন রিওয়ার্ড ২০ কয়েন
+            db.ref('users/' + uid + '/balance').transaction(c => (c || 0) + winAmt)
+            .then(() => {
+                document.getElementById('timer-text').innerText = "পয়েন্ট যোগ হয়েছে! 🎉";
+                startCooldown(); // ৫ সেকেন্ডের বিরতি
+            }).catch(err => {
+                alert("Error: " + err.message);
+                resetButton();
+            });
+        }
+
+        function startCooldown() {
+            let waitTime = 5;
+            const btn = document.getElementById('spinBtn');
+            const cooldownText = document.getElementById('cooldown');
+            const timerText = document.getElementById('timer-text');
+
+            btn.style.display = "none";
+            cooldownText.style.display = "block";
+
+            const waitInterval = setInterval(() => {
+                waitTime--;
+                timerText.innerText = "অপেক্ষা করুন: " + waitTime + "s";
+                
+                if(waitTime <= 0) {
+                    clearInterval(waitInterval);
+                    resetButton();
+                }
+            }, 1000);
+        }
+
+        function resetButton() {
+            const btn = document.getElementById('spinBtn');
+            const cooldownText = document.getElementById('cooldown');
+            const timerText = document.getElementById('timer-text');
+            const wheel = document.getElementById('wheel');
+
+            btn.style.display = "inline-block";
+            btn.disabled = false;
+            btn.innerText = "SPIN NOW";
+            cooldownText.style.display = "none";
+            timerText.innerText = "Spin to Earn";
+            
+            // চাকা রিসেট করা
+            wheel.style.transition = "0s";
+            wheel.style.transform = "rotate(0deg)";
+            setTimeout(() => { wheel.style.transition = "4s cubic-bezier(0.1, 0, 0.1, 1)"; }, 50);
+        }
+    </script>
+</body>
+</html>

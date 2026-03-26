@@ -155,20 +155,24 @@
         document.getElementById('signup-form').classList.toggle('hidden');
     }
 
-    // --- রেফারেল বোনাস (FIXED CODE) ---
+    // --- রেফারেল বোনাস লজিক ---
     function processReferral(newUserUid, typedCode) {
         if (!typedCode) return;
         db.ref('users').once('value', (snapshot) => {
             snapshot.forEach((childSnapshot) => {
-                const userId = childSnapshot.key;
-                const userData = childSnapshot.val();
-                const actualReferCode = userId.substring(0, 6).toUpperCase();
+                const referrerUid = childSnapshot.key;
+                const referrerData = childSnapshot.val();
+                
+                // রেফার কোড চেক (ইউজার আইডি'র প্রথম ৬ অক্ষর)
+                const actualReferCode = referrerUid.substring(0, 6).toUpperCase();
 
                 if (typedCode.toUpperCase() === actualReferCode) {
-                    db.ref('users/' + userId).update({
-                        balance: (userData.balance || 0) + 100,
-                        totalRefers: (userData.totalRefers || 0) + 1
+                    // যিনি রেফার করেছেন তাকে ১০০ কয়েন দিন
+                    db.ref('users/' + referrerUid).update({
+                        balance: (referrerData.balance || 0) + 100,
+                        totalRefers: (referrerData.totalRefers || 0) + 1
                     });
+                    // নতুন ইউজারকে ৫০ কয়েন বোনাস দিন
                     db.ref('users/' + newUserUid).update({
                         balance: 50
                     });
@@ -177,7 +181,7 @@
         });
     }
 
-    // --- সাইন আপ (FIXED CODE) ---
+    // --- সাইন আপ (অ্যাডমিন প্যানেল কানেক্টেড) ---
     function signUpUser() {
         const name = document.getElementById('newName').value;
         const email = document.getElementById('newEmail').value;
@@ -188,27 +192,34 @@
 
         auth.createUserWithEmailAndPassword(email, pass).then((res) => {
             const uid = res.user.uid;
+            
+            // ডাটা সরাসরি 'users' নোডে সেভ হবে যাতে অ্যাডমিন প্যানেল দেখতে পায়
             db.ref('users/' + uid).set({
                 username: name,
                 email: email,
                 balance: 0,
                 totalRefers: 0,
-                userId: uid
+                userId: uid,
+                joinedDate: new Date().toLocaleDateString()
             }).then(() => {
                 if(referCode) processReferral(uid, referCode);
                 window.location.href = "dashboard.html";
             });
-        }).catch(err => alert(err.message));
+        }).catch(err => alert("রেজিস্ট্রেশন ব্যর্থ: " + err.message));
     }
 
+    // --- লগইন ---
     function loginUser() {
         const email = document.getElementById('loginEmail').value;
         const pass = document.getElementById('loginPass').value;
+        if(!email || !pass) return alert("ইমেইল এবং পাসওয়ার্ড দিন");
+
         auth.signInWithEmailAndPassword(email, pass)
             .then(() => window.location.href = "dashboard.html")
-            .catch(err => alert(err.message));
+            .catch(err => alert("লগইন ব্যর্থ: " + err.message));
     }
 
+    // --- গুগল লগইন ---
     function googleLogin() {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).then((result) => {
@@ -220,7 +231,8 @@
                         email: user.email,
                         balance: 0,
                         totalRefers: 0,
-                        userId: user.uid
+                        userId: user.uid,
+                        joinedDate: new Date().toLocaleDateString()
                     });
                 }
                 window.location.href = "dashboard.html";

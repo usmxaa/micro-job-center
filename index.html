@@ -155,11 +155,9 @@
         document.getElementById('signup-form').classList.toggle('hidden');
     }
 
-    // --- রেফারেল বোনাস প্রসেস করার ফাংশন ---
+    // --- রেফারেল বোনাস (FIXED CODE) ---
     function processReferral(newUserUid, typedCode) {
         if (!typedCode) return;
-
-        // সব ইউজারদের মধ্যে এই কোডটি কার সেটা খোঁজা হচ্ছে
         db.ref('users').once('value', (snapshot) => {
             snapshot.forEach((childSnapshot) => {
                 const userId = childSnapshot.key;
@@ -167,15 +165,10 @@
                 const actualReferCode = userId.substring(0, 6).toUpperCase();
 
                 if (typedCode.toUpperCase() === actualReferCode) {
-                    // ১. যে রেফার করেছে তাকে ১০০ কয়েন দেওয়া
-                    const oldBalance = userData.balance || 0;
-                    const oldRefers = userData.totalRefers || 0;
                     db.ref('users/' + userId).update({
-                        balance: oldBalance + 100,
-                        totalRefers: oldRefers + 1)
+                        balance: (userData.balance || 0) + 100,
+                        totalRefers: (userData.totalRefers || 0) + 1
                     });
-
-                    // ২. নতুন ইউজারকে ৫০ কয়েন ওয়েলকাম বোনাস দেওয়া
                     db.ref('users/' + newUserUid).update({
                         balance: 50
                     });
@@ -184,7 +177,7 @@
         });
     }
 
-    // --- সাইন আপ ফাংশন ---
+    // --- সাইন আপ (FIXED CODE) ---
     function signUpUser() {
         const name = document.getElementById('newName').value;
         const email = document.getElementById('newEmail').value;
@@ -202,14 +195,12 @@
                 totalRefers: 0,
                 userId: uid
             }).then(() => {
-                // রেফারাল বোনাস চেক
                 if(referCode) processReferral(uid, referCode);
-                window.location.href = "index.html";
+                window.location.href = "dashboard.html";
             });
         }).catch(err => alert(err.message));
     }
 
-    // --- লগইন এবং গুগল লগইন আগের মতোই থাকবে ---
     function loginUser() {
         const email = document.getElementById('loginEmail').value;
         const pass = document.getElementById('loginPass').value;
@@ -234,8 +225,8 @@
                 }
                 window.location.href = "dashboard.html";
             });
-        }).catch(err => alert(err.message));
+        }).catch(err => alert("গুগল লগইন সমস্যা: " + err.message));
     }
 </script>
 </body>
-</html>    
+</html>

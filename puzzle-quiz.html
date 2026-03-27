@@ -14,19 +14,35 @@
         input:focus { border-color: var(--primary); }
         .btn { background: var(--primary); border: none; padding: 15px; width: 100%; border-radius: 15px; color: #000; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
-        .timer { font-size: 24px; color: var(--primary); font-weight: 800; margin-top: 10px; display: none; }
         .status-text { font-size: 14px; color: #aaa; margin-top: 10px; min-height: 20px; }
         .back-link { margin-top: 20px; color: #555; cursor: pointer; display: inline-block; text-decoration: none; font-size: 14px; }
         #cooldown-msg { color: #FF4444; font-size: 14px; margin-top: 10px; display: none; }
+
+        /* In-page Ad Overlay */
+        #adOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+        }
+        #adFrame { width: 100%; height: 100%; border: none; }
+        #adTimer {
+            position: absolute; top: 20px; right: 20px; background: var(--primary);
+            color: #000; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-size: 18px;
+            z-index: 10000; box-shadow: 0 0 15px rgba(255,123,0,0.5);
+        }
     </style>
 </head>
 <body>
+
+    <div id="adOverlay">
+        <div id="adTimer">10s</div>
+        <iframe id="adFrame" src=""></iframe>
+    </div>
+
     <div class="puzzle-box">
         <div class="hint" id="question">What has hands but cannot clap?</div>
         <input type="text" id="puzzAns" placeholder="আপনার উত্তর লিখুন">
         
         <div id="status" class="status-text">সঠিক উত্তর দিয়ে ৪০ কয়েন জিতুন</div>
-        <div id="timer" class="timer">10s</div>
         
         <button class="btn" id="submitBtn" onclick="solvePuzzle()">SUBMIT</button>
         <div id="cooldown-msg">পরবর্তী পাজলের জন্য অপেক্ষা করুন...</div>
@@ -63,33 +79,28 @@
             const ans = ansInput.value.toLowerCase().trim();
             const user = auth.currentUser;
             const btn = document.getElementById('submitBtn');
-            const statusText = document.getElementById('status');
-            const timerDisplay = document.getElementById('timer');
 
             if(!user) return;
 
-            // উত্তর চেক (Clock সঠিক উত্তর)
+            // সঠিক উত্তর চেক (clock)
             if(ans === "clock") {
-                // ১. অ্যাড ওপেন করা
-                window.open(smartLink, '_blank');
+                const overlay = document.getElementById('adOverlay');
+                const frame = document.getElementById('adFrame');
+                const timerEl = document.getElementById('adTimer');
 
-                btn.disabled = true;
-                ansInput.disabled = true;
-                btn.innerText = "CHECKING...";
-                statusText.innerText = "অ্যাডটি দেখুন, রিওয়ার্ড প্রসেস হচ্ছে...";
-                timerDisplay.style.display = "block";
+                // ১. অ্যাড লোড ও ওভারলে প্রদর্শন
+                frame.src = smartLink;
+                overlay.style.display = "block";
 
-                // ২. ১০ সেকেন্ড টাইমার শুরু
                 let timeLeft = 10;
-                timerDisplay.innerText = timeLeft + "s";
+                timerEl.innerText = timeLeft + "s";
 
                 const countdown = setInterval(() => {
                     timeLeft--;
-                    timerDisplay.innerText = timeLeft + "s";
+                    timerEl.innerText = timeLeft + "s";
                     
                     if(timeLeft <= 0) {
                         clearInterval(countdown);
-                        timerDisplay.innerText = "DONE!";
                         addReward(user.uid);
                     }
                 }, 1000);
@@ -102,11 +113,11 @@
         function addReward(uid) {
             db.ref('users/' + uid + '/balance').transaction(c => (c || 0) + 40)
             .then(() => {
+                // অ্যাড বন্ধ করা
+                document.getElementById('adOverlay').style.display = "none";
+                document.getElementById('adFrame').src = "";
                 document.getElementById('status').innerText = "অভিনন্দন! ৪০ কয়েন যোগ হয়েছে। 🎉";
                 startCooldown();
-            }).catch(err => {
-                alert("Error: " + err.message);
-                resetPuzzle();
             });
         }
 
@@ -114,14 +125,15 @@
             let waitTime = 5;
             const btn = document.getElementById('submitBtn');
             const cooldownMsg = document.getElementById('cooldown-msg');
-            const timerDisplay = document.getElementById('timer');
+            const ansInput = document.getElementById('puzzAns');
 
-            btn.style.display = "none";
+            btn.disabled = true;
+            ansInput.disabled = true;
             cooldownMsg.style.display = "block";
 
             const waitInterval = setInterval(() => {
                 waitTime--;
-                timerDisplay.innerText = waitTime + "s";
+                cooldownMsg.innerText = `পরবর্তী পাজলের জন্য অপেক্ষা করুন: ${waitTime}s`;
                 
                 if(waitTime <= 0) {
                     clearInterval(waitInterval);
@@ -134,17 +146,12 @@
             const btn = document.getElementById('submitBtn');
             const ansInput = document.getElementById('puzzAns');
             const cooldownMsg = document.getElementById('cooldown-msg');
-            const timerDisplay = document.getElementById('timer');
             const statusText = document.getElementById('status');
 
-            btn.style.display = "block";
             btn.disabled = false;
             ansInput.disabled = false;
             ansInput.value = "";
-            btn.innerText = "SUBMIT";
             cooldownMsg.style.display = "none";
-            timerDisplay.style.display = "none";
-            timerDisplay.innerText = "10s";
             statusText.innerText = "সঠিক উত্তর দিয়ে ৪০ কয়েন জিতুন";
         }
     </script>

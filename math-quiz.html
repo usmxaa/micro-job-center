@@ -14,20 +14,36 @@
         input:focus { border-color: var(--primary); }
         .btn { background: var(--primary); border: none; padding: 15px; width: 100%; border-radius: 15px; color: #000; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
-        .timer { font-size: 24px; color: var(--primary); font-weight: 800; margin-top: 10px; display: none; }
         .status-text { font-size: 14px; color: #aaa; margin-top: 10px; min-height: 20px; }
         .back-link { margin-top: 20px; color: #555; cursor: pointer; display: inline-block; text-decoration: none; font-size: 14px; }
         #cooldown-msg { color: #FF4444; font-size: 14px; margin-top: 10px; display: none; }
+
+        /* In-page Ad Overlay */
+        #adOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+        }
+        #adFrame { width: 100%; height: 100%; border: none; }
+        #adTimer {
+            position: absolute; top: 20px; right: 20px; background: var(--primary);
+            color: #000; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-size: 18px;
+            z-index: 10000; box-shadow: 0 0 15px rgba(255,123,0,0.5);
+        }
     </style>
 </head>
 <body>
+
+    <div id="adOverlay">
+        <div id="adTimer">10s</div>
+        <iframe id="adFrame" src=""></iframe>
+    </div>
+
     <div class="quiz-box">
         <p style="color: #888;">Solve to Earn 20 Coins</p>
         <div class="question" id="ques">Loading...</div>
         <input type="number" id="ans" placeholder="আপনার উত্তর">
         
         <div id="status" class="status-text">সঠিক উত্তর দিয়ে ২০ কয়েন জিতুন</div>
-        <div id="timer" class="timer">10s</div>
         
         <button class="btn" id="submitBtn" onclick="checkMath()">SUBMIT ANSWER</button>
         <div id="cooldown-msg">পরবর্তী কুইজের জন্য অপেক্ষা করুন...</div>
@@ -54,7 +70,6 @@
         const db = firebase.database();
 
         const smartLink = "https://www.profitablecpmratenetwork.com/uu5c1ia75?key=74b276b8394ac571c3400dbe1c55b86e";
-
         let num1, num2, correctAnswer;
 
         function generateQuiz() {
@@ -65,45 +80,36 @@
         }
 
         auth.onAuthStateChanged((user) => {
-            if (!user) {
-                window.location.href = "index.html";
-            } else {
-                generateQuiz();
-            }
+            if (!user) window.location.href = "index.html";
+            else generateQuiz();
         });
 
         function checkMath() {
             const user = auth.currentUser;
             const userAns = document.getElementById('ans').value;
             const btn = document.getElementById('submitBtn');
-            const statusText = document.getElementById('status');
-            const timerDisplay = document.getElementById('timer');
-            const ansInput = document.getElementById('ans');
 
             if(!user) return;
-            if(userAns === "") return alert("Please enter an answer!");
+            if(userAns === "") return alert("দয়া করে উত্তর লিখুন!");
 
             if(parseInt(userAns) === correctAnswer) {
-                // ১. অ্যাড ওপেন করা
-                window.open(smartLink, '_blank');
+                // ১. ইন-পেজ অ্যাড ওভারলে দেখানো
+                const overlay = document.getElementById('adOverlay');
+                const frame = document.getElementById('adFrame');
+                const timerEl = document.getElementById('adTimer');
 
-                btn.disabled = true;
-                ansInput.disabled = true;
-                btn.innerText = "CHECKING...";
-                statusText.innerText = "অ্যাডটি দেখুন, রিওয়ার্ড প্রসেস হচ্ছে...";
-                timerDisplay.style.display = "block";
+                frame.src = smartLink;
+                overlay.style.display = "block";
 
-                // ২. ১০ সেকেন্ড টাইমার শুরু
                 let timeLeft = 10;
-                timerDisplay.innerText = timeLeft + "s";
+                timerEl.innerText = timeLeft + "s";
 
                 const countdown = setInterval(() => {
                     timeLeft--;
-                    timerDisplay.innerText = timeLeft + "s";
+                    timerEl.innerText = timeLeft + "s";
                     
                     if(timeLeft <= 0) {
                         clearInterval(countdown);
-                        timerDisplay.innerText = "DONE!";
                         addReward(user.uid);
                     }
                 }, 1000);
@@ -116,11 +122,11 @@
         function addReward(uid) {
             db.ref('users/' + uid + '/balance').transaction(c => (c || 0) + 20)
             .then(() => {
+                // অ্যাড বন্ধ করা
+                document.getElementById('adOverlay').style.display = "none";
+                document.getElementById('adFrame').src = "";
                 document.getElementById('status').innerText = "অভিনন্দন! ২০ কয়েন যোগ হয়েছে। 🎉";
                 startCooldown();
-            }).catch(err => {
-                alert("Error: " + err.message);
-                resetQuiz();
             });
         }
 
@@ -128,14 +134,15 @@
             let waitTime = 5;
             const btn = document.getElementById('submitBtn');
             const cooldownMsg = document.getElementById('cooldown-msg');
-            const timerDisplay = document.getElementById('timer');
+            const ansInput = document.getElementById('ans');
 
-            btn.style.display = "none";
+            btn.disabled = true;
+            ansInput.disabled = true;
             cooldownMsg.style.display = "block";
 
             const waitInterval = setInterval(() => {
                 waitTime--;
-                timerDisplay.innerText = waitTime + "s";
+                cooldownMsg.innerText = `পরবর্তী কুইজের জন্য অপেক্ষা করুন: ${waitTime}s`;
                 
                 if(waitTime <= 0) {
                     clearInterval(waitInterval);
@@ -148,16 +155,12 @@
             const btn = document.getElementById('submitBtn');
             const ansInput = document.getElementById('ans');
             const cooldownMsg = document.getElementById('cooldown-msg');
-            const timerDisplay = document.getElementById('timer');
             const statusText = document.getElementById('status');
 
-            btn.style.display = "block";
             btn.disabled = false;
             ansInput.disabled = false;
             ansInput.value = "";
-            btn.innerText = "SUBMIT ANSWER";
             cooldownMsg.style.display = "none";
-            timerDisplay.style.display = "none";
             statusText.innerText = "সঠিক উত্তর দিয়ে ২০ কয়েন জিতুন";
             generateQuiz();
         }

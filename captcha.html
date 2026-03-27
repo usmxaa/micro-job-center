@@ -15,13 +15,30 @@
         input:focus { border-color: var(--primary); }
         .btn { background: var(--primary); border: none; padding: 15px; width: 100%; border-radius: 15px; color: #000; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
-        .timer { font-size: 24px; color: var(--primary); font-weight: 800; margin-top: 10px; display: none; }
         .status-text { font-size: 14px; color: #aaa; margin-top: 10px; min-height: 20px; }
         .back-link { margin-top: 20px; color: #888; cursor: pointer; display: inline-block; text-decoration: none; font-size: 14px; }
         #cooldown-msg { color: #FF4444; font-size: 14px; margin-top: 10px; display: none; }
+
+        /* Full Screen Ad Overlay */
+        #adOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+        }
+        #adFrame { width: 100%; height: 100%; border: none; }
+        #adTimer {
+            position: absolute; top: 20px; right: 20px; background: var(--primary);
+            color: #000; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-size: 18px;
+            z-index: 10000; box-shadow: 0 0 15px rgba(255,123,0,0.5);
+        }
     </style>
 </head>
 <body>
+
+    <div id="adOverlay">
+        <div id="adTimer">10s</div>
+        <iframe id="adFrame" src=""></iframe>
+    </div>
+
     <div class="app-shell">
         <h3 style="margin-top: 30px;">Solve Captcha</h3>
         
@@ -30,7 +47,6 @@
             <input type="text" id="userInput" placeholder="উপরের কোডটি লিখুন">
             
             <div id="status" class="status-text">ক্যাপচা পূরণ করে ৫ কয়েন জিতুন</div>
-            <div id="timer" class="timer">10s</div>
             
             <button class="btn" id="submitBtn" onclick="validateCaptcha()">SUBMIT & EARN</button>
             <div id="cooldown-msg">পরবর্তী ক্যাপচার জন্য অপেক্ষা করুন...</div>
@@ -59,7 +75,6 @@
 
         const smartLink = "https://www.profitablecpmratenetwork.com/uu5c1ia75?key=74b276b8394ac571c3400dbe1c55b86e";
 
-        // নতুন ক্যাপচা জেনারেট করা
         function generateCaptcha() {
             const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             let code = "";
@@ -70,11 +85,8 @@
         }
 
         auth.onAuthStateChanged((user) => {
-            if (!user) {
-                window.location.href = "index.html";
-            } else {
-                generateCaptcha();
-            }
+            if (!user) window.location.href = "index.html";
+            else generateCaptcha();
         });
 
         function validateCaptcha() {
@@ -82,34 +94,28 @@
             const code = document.getElementById('mainCaptcha').innerText;
             const input = document.getElementById('userInput').value.toUpperCase().trim();
             const btn = document.getElementById('submitBtn');
-            const statusText = document.getElementById('status');
-            const timerDisplay = document.getElementById('timer');
-            const userInputField = document.getElementById('userInput');
 
             if (!user) return;
             if (input === "") return alert("দয়া করে ক্যাপচা কোডটি লিখুন!");
 
             if (input === code) {
-                // ১. অ্যাড ওপেন করা
-                window.open(smartLink, '_blank');
+                // ১. ইন-পেজ অ্যাড শুরু
+                const overlay = document.getElementById('adOverlay');
+                const frame = document.getElementById('adFrame');
+                const timerEl = document.getElementById('adTimer');
 
-                btn.disabled = true;
-                userInputField.disabled = true;
-                btn.innerText = "CHECKING...";
-                statusText.innerText = "অ্যাডটি দেখুন, রিওয়ার্ড প্রসেস হচ্ছে...";
-                timerDisplay.style.display = "block";
+                frame.src = smartLink;
+                overlay.style.display = "block";
 
-                // ২. ১০ সেকেন্ড টাইমার শুরু
                 let timeLeft = 10;
-                timerDisplay.innerText = timeLeft + "s";
+                timerEl.innerText = timeLeft + "s";
 
                 const countdown = setInterval(() => {
                     timeLeft--;
-                    timerDisplay.innerText = timeLeft + "s";
+                    timerEl.innerText = timeLeft + "s";
                     
                     if(timeLeft <= 0) {
                         clearInterval(countdown);
-                        timerDisplay.innerText = "DONE!";
                         addReward(user.uid);
                     }
                 }, 1000);
@@ -124,11 +130,10 @@
         function addReward(uid) {
             db.ref('users/' + uid + '/balance').transaction(c => (c || 0) + 5)
             .then(() => {
+                document.getElementById('adOverlay').style.display = "none";
+                document.getElementById('adFrame').src = "";
                 document.getElementById('status').innerText = "অভিনন্দন! ৫ কয়েন যোগ হয়েছে। 🎉";
                 startCooldown();
-            }).catch(err => {
-                alert("Error: " + err.message);
-                resetCaptcha();
             });
         }
 
@@ -136,14 +141,15 @@
             let waitTime = 5;
             const btn = document.getElementById('submitBtn');
             const cooldownMsg = document.getElementById('cooldown-msg');
-            const timerDisplay = document.getElementById('timer');
+            const inputField = document.getElementById('userInput');
 
-            btn.style.display = "none";
+            btn.disabled = true;
+            inputField.disabled = true;
             cooldownMsg.style.display = "block";
 
             const waitInterval = setInterval(() => {
                 waitTime--;
-                timerDisplay.innerText = waitTime + "s";
+                cooldownMsg.innerText = `পরবর্তী ক্যাপচার জন্য অপেক্ষা করুন: ${waitTime}s`;
                 
                 if(waitTime <= 0) {
                     clearInterval(waitInterval);
@@ -154,18 +160,15 @@
 
         function resetCaptcha() {
             const btn = document.getElementById('submitBtn');
-            const userInputField = document.getElementById('userInput');
+            const inputField = document.getElementById('userInput');
             const cooldownMsg = document.getElementById('cooldown-msg');
-            const timerDisplay = document.getElementById('timer');
             const statusText = document.getElementById('status');
 
-            btn.style.display = "block";
             btn.disabled = false;
-            userInputField.disabled = false;
-            userInputField.value = "";
-            btn.innerText = "SUBMIT & EARN";
+            inputField.disabled = false;
+            inputField.value = "";
             cooldownMsg.style.display = "none";
-            timerDisplay.style.display = "none";
+            cooldownMsg.innerText = "পরবর্তী ক্যাপচার জন্য অপেক্ষা করুন...";
             statusText.innerText = "ক্যাপচা পূরণ করে ৫ কয়েন জিতুন";
             generateCaptcha();
         }

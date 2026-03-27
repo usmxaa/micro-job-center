@@ -9,18 +9,21 @@
         :root { --primary: #FF7B00; --dark-bg: #0A0A0A; }
         body { font-family: 'Poppins', sans-serif; background-color: var(--dark-bg); color: white; margin: 0; padding: 20px; text-align: center; overflow-x: hidden; }
         
+        /* ঘষার এরিয়া */
         .scratch-container {
             position: relative; width: 300px; height: 150px; margin: 40px auto;
             border-radius: 15px; overflow: hidden; border: 2px dashed #444;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5); background: #1a1a1a;
         }
 
+        /* নিচের রিওয়ার্ড লেয়ার */
         .reward-behind {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
             font-size: 30px; font-weight: bold; color: var(--primary); z-index: 1;
         }
 
+        /* ওপরের ঘষার লেয়ার (Canvas) */
         #scratchCanvas {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             cursor: crosshair; z-index: 2; touch-action: none;
@@ -29,6 +32,7 @@
         .timer-text { font-size: 18px; color: var(--primary); margin-bottom: 10px; font-weight: 600; min-height: 27px; }
         .reward-msg { color: #00E676; margin-top: 20px; font-weight: 600; font-size: 14px; min-height: 21px; }
         
+        /* অ্যাড ওভারলে */
         #adOverlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999;
@@ -84,49 +88,66 @@
         let isDrawing = false, isScratched = false;
         const smartLink = "https://www.profitablecpmratenetwork.com/uu5c1ia75?key=74b276b8394ac571c3400dbe1c55b86e";
 
+        // ক্যানভাসে ধুসর রঙের লেয়ার তৈরি (ঘষার জন্য)
         function initCanvas() {
             ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = '#888';
+            ctx.fillStyle = '#888'; // ধুসর রঙ
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#444';
+            ctx.fillStyle = '#eee';
             ctx.font = '20px Poppins';
             ctx.textAlign = 'center';
             ctx.fillText('SCRATCH HERE', canvas.width/2, canvas.height/2 + 7);
             isScratched = false;
         }
 
-        auth.onAuthStateChanged(user => { if(!user) window.location.href="index.html"; else initCanvas(); });
+        auth.onAuthStateChanged(user => { 
+            if(!user) window.location.href="index.html"; 
+            else initCanvas(); 
+        });
 
-        function scratch(e) {
+        // ঘষার ফাংশন
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function scratchMove(e) {
             if(!isDrawing || isScratched) return;
             e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            const pos = getPos(e);
             
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI*2); ctx.fill();
+            ctx.globalCompositeOperation = 'destination-out'; // এই লাইনটি ঘষার কাজ করে
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
+            ctx.fill();
             checkPercent();
         }
 
+        // কতটুকু ঘষা হয়েছে তা চেক করা
         function checkPercent() {
             const pixels = ctx.getImageData(0,0,canvas.width,canvas.height).data;
             let count = 0;
             for(let i=3; i<pixels.length; i+=4) if(pixels[i]===0) count++;
+            
+            // ৫০% এর বেশি ঘষলে অ্যাড লোড হবে
             if(count > (pixels.length/4)*0.5 && !isScratched) {
                 isScratched = true;
-                ctx.clearRect(0,0,canvas.width,canvas.height);
+                ctx.clearRect(0,0,canvas.width,canvas.height); // পুরো কার্ড ক্লিয়ার
                 startAd();
             }
         }
 
+        // ইভেন্ট লিসেনার
         canvas.addEventListener('mousedown', () => isDrawing=true);
         canvas.addEventListener('touchstart', () => isDrawing=true);
         window.addEventListener('mouseup', () => isDrawing=false);
         window.addEventListener('touchend', () => isDrawing=false);
-        canvas.addEventListener('mousemove', scratch);
-        canvas.addEventListener('touchmove', scratch);
+        canvas.addEventListener('mousemove', scratchMove);
+        canvas.addEventListener('touchmove', scratchMove);
 
+        // ভিডিও অ্যাড এবং রিওয়ার্ড ফাংশন
         function startAd() {
             const overlay = document.getElementById('adOverlay');
             const frame = document.getElementById('adFrame');
@@ -145,13 +166,14 @@
                         overlay.style.display = "none";
                         frame.src = "";
                         document.getElementById('rewardValue').innerText = "💰 15";
-                        document.getElementById('rewardMsg').innerText = "অভিনন্দন! ১৫ কয়েন পেয়েছেন।";
+                        document.getElementById('rewardMsg').innerText = "অভিনন্দন! ১৫ কয়েন পেয়েছেন। ✅";
                         startCooldown();
                     });
                 }
             }, 1000);
         }
 
+        // ৫ সেকেন্ড বিরতি (Cooldown)
         function startCooldown() {
             let wait = 5;
             const status = document.getElementById('statusDisplay');
@@ -163,7 +185,7 @@
                     status.innerText = "কার্ডটি ঘষুন (Scratch)";
                     document.getElementById('rewardMsg').innerText = "";
                     document.getElementById('rewardValue').innerText = "🎁";
-                    initCanvas();
+                    initCanvas(); // কার্ড আবার রিসেট
                 }
             }, 1000);
         }

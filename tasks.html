@@ -17,7 +17,7 @@
         .balance-status { background: var(--card-bg); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; }
         .task-card { background: var(--card-bg); border-radius: 20px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
         .reward-tag { color: var(--primary); font-weight: 700; font-size: 14px; }
-        .play-btn { background: var(--primary); border: none; padding: 8px 15px; border-radius: 10px; color: #000; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .play-btn { background: var(--primary); border: none; padding: 8px 15px; border-radius: 10px; color: #000; font-weight: 700; cursor: pointer; transition: 0.3s; min-width: 80px; }
         .play-btn:disabled { background: #333; color: #777; cursor: not-allowed; }
 
         /* Full Screen Ad Overlay */
@@ -29,7 +29,7 @@
         #adTimer {
             position: absolute; top: 20px; right: 20px; background: var(--primary);
             color: #000; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-size: 18px;
-            z-index: 10000;
+            z-index: 10000; box-shadow: 0 0 15px rgba(255,123,0,0.5);
         }
 
         .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 380px; background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 12px 0; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); z-index: 100; }
@@ -98,21 +98,20 @@
         auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUid = user.uid;
-                // ব্যালেন্স আপডেট
+                // ব্যালেন্স লাইভ আপডেট
                 db.ref('users/' + user.uid + '/balance').on('value', (s) => {
                     document.getElementById('coinBalance').innerText = `🟡 ${s.val() || 0} Coins`;
                 });
-                checkDailyStatus(); // ২৪ ঘণ্টা চেক
+                checkDailyStatus(); 
             } else { window.location.href = "index.html"; }
         });
 
-        // ভিডিও অ্যাড ফাংশন
+        // ভিডিও অ্যাড লজিক
         function startVideoAd() {
             if (!currentUid) return;
             const overlay = document.getElementById('adOverlay');
             const frame = document.getElementById('adFrame');
             const timerEl = document.getElementById('adTimer');
-            const btn = document.getElementById('videoBtn');
 
             frame.src = smartLink;
             overlay.style.display = "block";
@@ -130,7 +129,7 @@
                     .then(() => {
                         overlay.style.display = "none";
                         frame.src = "";
-                        startVideoCooldown(); // ৫ সেকেন্ড বিরতি
+                        startVideoCooldown();
                     });
                 }
             }, 1000);
@@ -151,29 +150,39 @@
             }, 1000);
         }
 
-        // Daily Check-in (24 Hours Logic)
+        // Daily Check-in লজিক (Updated)
         function claimDaily() {
             if (!currentUid) return;
+            const btn = document.getElementById('dailyBtn');
             const now = Date.now();
             
             db.ref('users/' + currentUid + '/lastDaily').once('value', (s) => {
                 const lastClaim = s.val() || 0;
-                const oneDay = 24 * 60 * 60 * 1000; // ২৪ ঘণ্টা মিলিসেকেন্ডে
+                const oneDay = 24 * 60 * 60 * 1000; 
 
                 if (now - lastClaim >= oneDay) {
+                    btn.disabled = true;
+                    btn.innerText = "WAIT...";
+
                     db.ref('users/' + currentUid).update({
-                        lastDaily: now,
-                        balance: firebase.database.ServerValue.increment(50)
+                        lastDaily: now
                     }).then(() => {
-                        alert("অভিনন্দন! ৫০ কয়েন পেয়েছেন।");
-                        checkDailyStatus();
+                        return db.ref('users/' + currentUid + '/balance').transaction(c => (c || 0) + 50);
+                    }).then(() => {
+                        btn.innerText = "DONE ✅"; 
+                        alert("অভিনন্দন! ৫০ কয়েন পেয়েছেন। 🎉");
+                    }).catch(err => {
+                        btn.disabled = false;
+                        btn.innerText = "CLAIM";
+                        alert("Error: " + err.message);
                     });
                 } else {
-                    alert("আপনি ইতিমধ্যে আজ ক্লেইম করেছেন! আগামীকাল আবার চেষ্টা করুন।");
+                    alert("আপনি ইতিমধ্যে আজ ক্লেইম করেছেন!");
                 }
             });
         }
 
+        // বাটন স্ট্যাটাস চেক (২৪ ঘণ্টা লক)
         function checkDailyStatus() {
             const btn = document.getElementById('dailyBtn');
             db.ref('users/' + currentUid + '/lastDaily').on('value', (s) => {
@@ -183,10 +192,14 @@
 
                 if (now - lastClaim < oneDay) {
                     btn.disabled = true;
-                    btn.innerText = "CLAIMED";
+                    btn.innerText = "DONE ✅"; 
+                    btn.style.background = "#333";
+                    btn.style.color = "#888";
                 } else {
                     btn.disabled = false;
                     btn.innerText = "CLAIM";
+                    btn.style.background = "var(--primary)";
+                    btn.style.color = "#000";
                 }
             });
         }

@@ -8,14 +8,39 @@
     <style>
         :root { --primary: #FF7B00; --dark-bg: #0A0A0A; --card-bg: rgba(255, 255, 255, 0.05); }
         body { font-family: 'Poppins', sans-serif; background-color: var(--dark-bg); color: white; margin: 0; padding: 20px; text-align: center; }
-        .scratch-card { width: 300px; height: 150px; background: #333; margin: 40px auto; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 2px dashed var(--primary); cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
+        
+        .scratch-card { 
+            width: 300px; height: 150px; background: #333; margin: 40px auto; 
+            border-radius: 15px; display: flex; align-items: center; justify-content: center; 
+            font-size: 24px; font-weight: bold; border: 2px dashed var(--primary); 
+            cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; 
+        }
+        .scratch-card.disabled { cursor: not-allowed; opacity: 0.6; border-color: #444; }
+
         .reward-msg { color: var(--primary); margin-top: 20px; font-weight: 600; min-height: 24px; }
         .timer-text { font-size: 18px; color: var(--primary); margin-bottom: 10px; font-weight: 600; }
         .btn-home { background: transparent; border: 1px solid #444; padding: 10px 25px; border-radius: 10px; color: #888; cursor: pointer; margin-top: 20px; text-decoration: none; display: inline-block; font-size: 14px; }
-        #cooldown { color: #FF4444; font-size: 14px; margin-top: 10px; display: none; }
+        
+        /* Full Screen Ad Overlay (Same as Video Ad) */
+        #adOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+        }
+        #adFrame { width: 100%; height: 100%; border: none; }
+        #adTimer {
+            position: absolute; top: 20px; right: 20px; background: var(--primary);
+            color: #000; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-size: 18px;
+            z-index: 10000; box-shadow: 0 0 15px rgba(255,123,0,0.5);
+        }
     </style>
 </head>
 <body>
+
+    <div id="adOverlay">
+        <div id="adTimer">10s</div>
+        <iframe id="adFrame" src=""></iframe>
+    </div>
+
     <h3 style="margin-top: 30px;">Scratch and Win</h3>
     
     <div id="timerDisplay" class="timer-text">Click to Scratch</div>
@@ -23,7 +48,6 @@
     <div class="scratch-card" id="card" onclick="startScratch()">SCRATCH HERE</div>
     
     <div id="rewardMsg" class="reward-msg"></div>
-    <div id="cooldown">পরবর্তী কার্ডের জন্য অপেক্ষা করুন...</div>
 
     <br>
     <a href="dashboard.html" class="btn-home">← Back to Home</a>
@@ -56,60 +80,51 @@
             const user = auth.currentUser;
             if (!user) return;
 
-            // ১. অ্যাড ওপেন করা
-            window.open(smartLink, '_blank');
-
+            const overlay = document.getElementById('adOverlay');
+            const frame = document.getElementById('adFrame');
+            const timerEl = document.getElementById('adTimer');
             const card = document.getElementById('card');
-            const timerDisplay = document.getElementById('timerDisplay');
-            const rewardMsg = document.getElementById('rewardMsg');
-            
-            card.onclick = null; // বাটন ডিজেবল
-            card.style.background = "var(--card-bg)";
-            card.innerText = "⌛ CHECKING...";
-            rewardMsg.innerText = "অ্যাডটি দেখুন, রিওয়ার্ড প্রসেস হচ্ছে...";
+
+            // ১. অ্যাড লোড করা এবং ওভারলে দেখানো
+            frame.src = smartLink;
+            overlay.style.display = "block";
+            card.onclick = null; // ক্লিক বন্ধ করা
+            card.classList.add('disabled');
+
+            let timeLeft = 10;
+            timerEl.innerText = timeLeft + "s";
 
             // ২. ১০ সেকেন্ড টাইমার শুরু
-            let timeLeft = 10;
-            timerDisplay.innerText = "অপেক্ষা করুন: " + timeLeft + "s";
-
             const countdown = setInterval(() => {
                 timeLeft--;
-                if(timeLeft > 0) {
-                    timerDisplay.innerText = "অপেক্ষা করুন: " + timeLeft + "s";
-                } else {
+                timerEl.innerText = timeLeft + "s";
+
+                if (timeLeft <= 0) {
                     clearInterval(countdown);
-                    timerDisplay.innerText = "DONE!";
-                    addReward(user.uid);
+                    
+                    // ৩. রিওয়ার্ড দেওয়া
+                    db.ref('users/' + user.uid + '/balance').transaction(c => (c || 0) + 15)
+                    .then(() => {
+                        overlay.style.display = "none";
+                        frame.src = "";
+                        document.getElementById('rewardMsg').innerText = "অভিনন্দন! আপনি ১৫ কয়েন পেয়েছেন। ✅";
+                        document.getElementById('card').innerText = "💰 15";
+                        startCooldown(); // ৫ সেকেন্ড বিরতি
+                    });
                 }
             }, 1000);
         }
 
-        function addReward(uid) {
-            const rewardAmt = 15; // স্ক্র্যাচ রিওয়ার্ড ১৫ কয়েন
-            db.ref('users/' + uid + '/balance').transaction(c => (c || 0) + rewardAmt)
-            .then(() => {
-                const card = document.getElementById('card');
-                card.innerText = "💰 " + rewardAmt;
-                document.getElementById('rewardMsg').innerText = "অভিনন্দন! আপনি " + rewardAmt + " কয়েন পেয়েছেন। ✅";
-                startCooldown();
-            }).catch(err => {
-                alert("Error: " + err.message);
-                resetCard();
-            });
-        }
-
         function startCooldown() {
             let waitTime = 5;
-            const cooldownText = document.getElementById('cooldown');
             const timerDisplay = document.getElementById('timerDisplay');
-
-            cooldownText.style.display = "block";
+            const card = document.getElementById('card');
 
             const waitInterval = setInterval(() => {
                 waitTime--;
                 timerDisplay.innerText = "পরবর্তী কার্ড: " + waitTime + "s";
                 
-                if(waitTime <= 0) {
+                if (waitTime <= 0) {
                     clearInterval(waitInterval);
                     resetCard();
                 }
@@ -118,16 +133,13 @@
 
         function resetCard() {
             const card = document.getElementById('card');
-            const cooldownText = document.getElementById('cooldown');
             const timerDisplay = document.getElementById('timerDisplay');
             const rewardMsg = document.getElementById('rewardMsg');
 
-            card.style.background = "#333";
-            card.style.border = "2px dashed var(--primary)";
+            card.classList.remove('disabled');
             card.innerText = "SCRATCH HERE";
             card.onclick = startScratch;
             
-            cooldownText.style.display = "none";
             timerDisplay.innerText = "Click to Scratch";
             rewardMsg.innerText = "";
         }
